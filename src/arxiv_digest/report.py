@@ -26,8 +26,12 @@ def report_paths(
     *,
     report_date: date,
     profile_name: str,
+    report_suffix: str | None = None,
 ) -> dict[str, Path]:
+    suffix = _normalize_report_suffix(report_suffix)
     stem = f"{report_date.isoformat()}-{profile_name}"
+    if suffix:
+        stem = f"{stem}-{suffix}"
     output_dir = Path(config.output.report_dir)
     return {
         "markdown": output_dir / f"{stem}.md",
@@ -36,8 +40,19 @@ def report_paths(
     }
 
 
-def report_exists(config: AppConfig, *, report_date: date, profile_name: str) -> bool:
-    paths = report_paths(config, report_date=report_date, profile_name=profile_name)
+def report_exists(
+    config: AppConfig,
+    *,
+    report_date: date,
+    profile_name: str,
+    report_suffix: str | None = None,
+) -> bool:
+    paths = report_paths(
+        config,
+        report_date=report_date,
+        profile_name=profile_name,
+        report_suffix=report_suffix,
+    )
     return paths["html"].exists() and paths["json"].exists()
 
 
@@ -48,15 +63,27 @@ def generate_reports(
     report_date: date | None = None,
     formats: list[str] | None = None,
     profile_name: str | None = None,
+    lookback_hours: int | None = None,
+    report_suffix: str | None = None,
 ) -> dict[str, Path]:
     resolved_profile_name, profile = config.get_profile(profile_name)
     target_date = report_date or today_in_timezone(profile.arxiv.timezone)
     selected_formats = _normalize_formats(formats or config.output.formats)
-    report_data = build_report_data(storage, config, target_date, resolved_profile_name)
+    suffix = _normalize_report_suffix(report_suffix)
+    report_data = build_report_data(
+        storage,
+        config,
+        target_date,
+        resolved_profile_name,
+        lookback_hours=lookback_hours,
+        report_suffix=suffix,
+    )
     output_dir = ensure_dir(config.output.report_dir)
     generated: dict[str, Path] = {}
 
     stem = f"{target_date.isoformat()}-{resolved_profile_name}"
+    if suffix:
+        stem = f"{stem}-{suffix}"
     if "markdown" in selected_formats:
         path = output_dir / f"{stem}.md"
         path.write_text(render_markdown(report_data), encoding="utf-8")
@@ -77,12 +104,16 @@ def build_report_data(
     config: AppConfig,
     target_date: date,
     profile_name: str | None = None,
+    lookback_hours: int | None = None,
+    report_suffix: str | None = None,
 ) -> dict[str, Any]:
     resolved_profile_name, profile = config.get_profile(profile_name)
+    resolved_lookback_hours = lookback_hours or profile.arxiv.lookback_hours
+    suffix = _normalize_report_suffix(report_suffix)
     window_start, window_end = _report_window(
         target_date,
         timezone_name=profile.arxiv.timezone,
-        lookback_hours=profile.arxiv.lookback_hours,
+        lookback_hours=resolved_lookback_hours,
     )
     all_papers = storage.list_papers_by_window(
         window_start,
@@ -123,6 +154,10 @@ def build_report_data(
         "timezone": profile.arxiv.timezone,
         "window_start": _format_datetime(window_start.astimezone(ZoneInfo(profile.arxiv.timezone))),
         "window_end": _format_datetime(window_end.astimezone(ZoneInfo(profile.arxiv.timezone))),
+        "lookback_hours": resolved_lookback_hours,
+        "window_label": _window_label(resolved_lookback_hours),
+        "report_suffix": suffix,
+        "report_key": f"{resolved_profile_name}-{suffix}" if suffix else resolved_profile_name,
         "report_mode": report_mode,
         "profile": resolved_profile_name,
         "profile_display_name": profile.display_name,
@@ -215,6 +250,22 @@ def _normalize_formats(formats: list[str]) -> set[str]:
     return normalized
 
 
+def _normalize_report_suffix(report_suffix: str | None) -> str:
+    if not report_suffix:
+        return ""
+    normalized = "".join(
+        char if char.isalnum() or char in {"-", "_"} else "-" for char in report_suffix.strip()
+    )
+    return normalized.strip("-_")
+
+
+def _window_label(lookback_hours: int) -> str:
+    if lookback_hours % 24 == 0 and lookback_hours >= 24:
+        days = lookback_hours // 24
+        return f"近 {days} 天"
+    return f"近 {lookback_hours} 小时"
+
+
 def _format_datetime(value: datetime) -> str:
     return value.strftime("%Y-%m-%d %H:%M %Z")
 
@@ -243,6 +294,7 @@ MARKDOWN_TEMPLATE = """
 # arXiv Physics Digest - {{ date }}
 
 方向：{{ profile_display_name }} / {{ profile_display_name_zh }}
+报告窗口：{{ window_label }}
 {% if report_mode == "abstract_translation" %}
 今日共抓取 {{ total_papers }} 篇强关联电子方向论文，其中完成摘要中文对应 {{ analyzed_papers }} 篇。
 {% else %}
@@ -351,24 +403,28 @@ HTML_TEMPLATE = """
   <style>
     :root {
       color-scheme: light;
-      --bg: #f6f7f5;
-      --fg: #1f2933;
+      --bg: #f4f6f8;
+      --fg: #17202a;
       --muted: #667085;
-      --line: #d8d9d4;
+      --line: #d6dce2;
       --panel: #ffffff;
-      --accent: #0f766e;
-      --accent-soft: #d8f3ee;
+      --accent: #0b6b74;
+      --accent-strong: #084c61;
+      --accent-soft: #dff3f5;
       --high: #b42318;
+      --shadow: 0 10px 28px rgba(22, 34, 51, 0.08);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
+      background:
+        linear-gradient(180deg, #eef4f7 0, var(--bg) 280px),
+        var(--bg);
       color: var(--fg);
       line-height: 1.55;
     }
-    header, main { max-width: 1080px; margin: 0 auto; padding: 24px; }
+    header, main { max-width: 1120px; margin: 0 auto; padding: 28px 24px; }
     header { border-bottom: 1px solid var(--line); }
     h1 { margin: 0 0 8px; font-size: 32px; letter-spacing: 0; }
     h2 { margin-top: 32px; font-size: 22px; }
@@ -386,8 +442,9 @@ HTML_TEMPLATE = """
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 18px;
+      padding: 20px;
       margin: 16px 0;
+      box-shadow: var(--shadow);
     }
     .card.high { border-left: 5px solid var(--high); }
     .badge {
@@ -407,6 +464,20 @@ HTML_TEMPLATE = """
     }
     ul { padding-left: 20px; }
     .section-label { font-weight: 700; margin-top: 14px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    .button {
+      display: inline-block;
+      color: #fff;
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      padding: 8px 12px;
+      text-decoration: none;
+    }
+    .button.secondary {
+      background: var(--accent-strong);
+      border-color: var(--accent-strong);
+    }
   </style>
 </head>
 <body>
@@ -414,6 +485,7 @@ HTML_TEMPLATE = """
     <h1>arXiv Physics Digest - {{ date }}</h1>
     <div class="meta">
       <span>{{ profile_display_name }} / {{ profile_display_name_zh }}</span>
+      <span>{{ window_label }}</span>
       <span>Total: {{ total_papers }}</span>
       {% if report_mode == "abstract_translation" %}
       <span>Translated: {{ analyzed_papers }}</span>
@@ -422,6 +494,11 @@ HTML_TEMPLATE = """
       {% endif %}
       <span>Timezone: {{ timezone }}</span>
       <span>Window: {{ window_start }} - {{ window_end }}</span>
+    </div>
+    <div class="actions">
+      <a class="button" href="../latest/{{ profile }}.html">近 36 小时</a>
+      <a class="button secondary" href="../latest/{{ profile }}-7d.html">近 7 天</a>
+      <a class="button secondary" href="../index.html">报告首页</a>
     </div>
   </header>
   <main>

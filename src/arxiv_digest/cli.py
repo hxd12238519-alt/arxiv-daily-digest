@@ -88,6 +88,17 @@ def report(
     profile: str | None = typer.Option(None, "--profile", help="Profile name."),
     report_date: str | None = typer.Option(None, "--date", help="Report date YYYY-MM-DD."),
     output_format: str = typer.Option("all", "--format", help="markdown/html/json/all."),
+    lookback_hours: int | None = typer.Option(
+        None,
+        "--lookback-hours",
+        min=1,
+        help="Override report window length in hours.",
+    ),
+    report_suffix: str | None = typer.Option(
+        None,
+        "--report-suffix",
+        help="Suffix report filenames, e.g. 7d.",
+    ),
     config: Path | None = typer.Option(None, "--config", help="Path to config YAML."),
 ) -> None:
     cfg = load_config(config)
@@ -100,6 +111,8 @@ def report(
         report_date=target_date,
         formats=[output_format],
         profile_name=profile,
+        lookback_hours=lookback_hours,
+        report_suffix=report_suffix,
     )
     for fmt, path in generated.items():
         console.print(f"[green]Generated {fmt} report:[/green] {path}")
@@ -111,12 +124,26 @@ def run_daily(
     provider: str | None = typer.Option(None, "--provider", help="Override LLM provider."),
     model: str | None = typer.Option(None, "--model", help="Override model name."),
     limit: int | None = typer.Option(None, "--limit", min=1, help="Maximum papers to analyze."),
+    lookback_hours: int | None = typer.Option(
+        None,
+        "--lookback-hours",
+        min=1,
+        help="Override fetch/report window length in hours.",
+    ),
+    report_suffix: str | None = typer.Option(
+        None,
+        "--report-suffix",
+        help="Suffix report filenames, e.g. 7d.",
+    ),
     sample: bool = typer.Option(False, "--sample", help="Use built-in sample Atom feed."),
     offline: bool = typer.Option(False, "--offline", help="Alias for --sample."),
     config: Path | None = typer.Option(None, "--config", help="Path to config YAML."),
 ) -> None:
     cfg = load_config(config)
     profile_name, _ = cfg.get_profile(profile)
+    if lookback_hours is not None:
+        cfg = cfg.model_copy(deep=True)
+        cfg.profiles[profile_name].arxiv.lookback_hours = int(lookback_hours)
     storage = Storage(cfg.database.path)
     console.print("[bold]Step 1/4 init-db[/bold]")
     storage.init_db()
@@ -147,7 +174,14 @@ def run_daily(
     )
 
     console.print("[bold]Step 4/4 report[/bold]")
-    generated = generate_reports(storage, cfg, formats=["all"], profile_name=profile_name)
+    generated = generate_reports(
+        storage,
+        cfg,
+        formats=["all"],
+        profile_name=profile_name,
+        lookback_hours=lookback_hours,
+        report_suffix=report_suffix,
+    )
     for fmt, path in generated.items():
         console.print(f"Generated {fmt}: {path}")
 

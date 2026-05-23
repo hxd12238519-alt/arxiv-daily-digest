@@ -61,6 +61,8 @@ class TaskRun(BaseModel):
     id: str
     profile: str
     provider: str
+    lookback_hours: int | None = None
+    report_suffix: str = ""
     status: TaskRunStatus
     status_message: str | None = None
     started_at: datetime | None = None

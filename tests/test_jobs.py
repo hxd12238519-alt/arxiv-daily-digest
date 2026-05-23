@@ -20,6 +20,7 @@ def test_job_failure_does_not_stop_other_jobs(tmp_path: Path) -> None:
     config.database.path = str(tmp_path / "digest.sqlite3")
     config.llm.max_retries = 1
     config.llm.request_interval_seconds = 0
+    config.llm.concurrent_requests = 1
 
     storage = Storage(config.database.path)
     storage.init_db()
@@ -55,6 +56,7 @@ def test_analysis_progress_callback_reports_each_job(tmp_path: Path) -> None:
     config.database.path = str(tmp_path / "digest.sqlite3")
     config.llm.max_retries = 1
     config.llm.request_interval_seconds = 0
+    config.llm.concurrent_requests = 1
 
     storage = Storage(config.database.path)
     storage.init_db()

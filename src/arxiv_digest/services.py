@@ -43,6 +43,20 @@ def has_today_report(config: AppConfig, profile_name: str) -> bool:
     )
 
 
+def has_today_window_report(
+    config: AppConfig,
+    profile_name: str,
+    *,
+    report_suffix: str | None = None,
+) -> bool:
+    return report_exists(
+        config,
+        report_date=today_for_profile(config, profile_name),
+        profile_name=profile_name,
+        report_suffix=report_suffix,
+    )
+
+
 def run_daily_pipeline(
     config: AppConfig,
     *,
@@ -52,23 +66,26 @@ def run_daily_pipeline(
     limit: int | None = None,
     sample: bool = False,
     sleep_func: Any | None = None,
+    lookback_hours: int | None = None,
+    report_suffix: str | None = None,
 ) -> DailyRunResult:
     resolved_profile_name, _ = config.get_profile(profile_name)
+    run_config = _config_with_lookback(config, resolved_profile_name, lookback_hours)
     resolved_provider = resolve_provider(config, provider)
-    storage = Storage(config.database.path)
+    storage = Storage(run_config.database.path)
     storage.init_db()
 
     if sample:
-        papers = sample_arxiv_papers_for_profile(config, resolved_profile_name)
+        papers = sample_arxiv_papers_for_profile(run_config, resolved_profile_name)
     else:
         kwargs = {"profile_name": resolved_profile_name}
         if sleep_func is not None:
             kwargs["sleep_func"] = sleep_func
-        papers = fetch_arxiv_papers(config, **kwargs)
+        papers = fetch_arxiv_papers(run_config, **kwargs)
 
     inserted, duplicates = storage.insert_papers(papers)
     analysis = analyze_pending_papers(
-        config,
+        run_config,
         storage,
         profile_name=resolved_profile_name,
         provider_override=resolved_provider,
@@ -78,9 +95,11 @@ def run_daily_pipeline(
     )
     reports = generate_reports(
         storage,
-        config,
+        run_config,
         formats=["all"],
         profile_name=resolved_profile_name,
+        lookback_hours=lookback_hours,
+        report_suffix=report_suffix,
     )
     return DailyRunResult(
         profile=resolved_profile_name,
@@ -97,3 +116,15 @@ def _default_sleep(seconds: float) -> None:
     import time
 
     time.sleep(seconds)
+
+
+def _config_with_lookback(
+    config: AppConfig,
+    profile_name: str,
+    lookback_hours: int | None,
+) -> AppConfig:
+    if lookback_hours is None:
+        return config
+    cloned = config.model_copy(deep=True)
+    cloned.profiles[profile_name].arxiv.lookback_hours = max(1, int(lookback_hours))
+    return cloned

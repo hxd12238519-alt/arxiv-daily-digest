@@ -4,6 +4,7 @@
   <h2>arXiv Physics Digest - {{ date }}</h2>
   <p class="muted">{{ profile_display_name }} / {{ profile_display_name_zh }}</p>
   <div class="stats">
+    <span>{{ window_label }}</span>
     <span>Total: {{ total_papers }}</span>
     {% if report_mode == "abstract_translation" %}
     <span>Translated: {{ analyzed_papers }}</span>
@@ -11,6 +12,11 @@
     <span>Analyzed: {{ analyzed_papers }}</span>
     {% endif %}
     <span>Window: {{ window_start }} - {{ window_end }}</span>
+  </div>
+  <div class="actions compact">
+    <a class="button-link" href="/reports/today?profile={{ profile }}">近 36 小时</a>
+    <a class="button-link secondary" href="/reports/today?profile={{ profile }}&suffix=7d">近 7 天</a>
+    <a class="button-link ghost" href="/">返回首页</a>
   </div>
 </section>
 

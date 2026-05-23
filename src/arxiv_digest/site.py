@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import shutil
 from dataclasses import dataclass
@@ -47,13 +48,7 @@ def build_static_site(
             {
                 "title": "arXiv Physics Digest",
                 "reports": sorted(report_items, key=lambda item: item["sort_key"], reverse=True),
-                "latest_reports": [
-                    _index_item_for_latest(item, latest_paths[item["profile"]])
-                    for item in sorted(
-                        latest_by_profile.values(),
-                        key=lambda value: value["profile"],
-                    )
-                ],
+                "latest_groups": _latest_groups(latest_by_profile, latest_paths),
                 "public_base_url": config.web.public_base_url,
             }
         ),
@@ -86,15 +81,21 @@ def _copy_reports(report_dir: Path, reports_output_dir: Path) -> list[dict[str, 
         match = REPORT_RE.match(source.name)
         if source.suffix == ".html" and match:
             report_date = date.fromisoformat(match.group("date"))
-            profile = match.group("profile")
+            metadata = _report_metadata(report_dir, source)
+            profile = str(metadata.get("profile") or match.group("profile"))
+            report_suffix = str(metadata.get("report_suffix") or "")
+            report_key = str(metadata.get("report_key") or _report_key(profile, report_suffix))
             items.append(
                 {
                     "date": report_date.isoformat(),
                     "profile": profile,
+                    "report_suffix": report_suffix,
+                    "report_key": report_key,
+                    "window_label": metadata.get("window_label") or "近 36 小时",
                     "filename": source.name,
                     "path": destination,
                     "href": f"reports/{source.name}",
-                    "sort_key": (report_date.isoformat(), profile),
+                    "sort_key": (report_date.isoformat(), profile, report_suffix),
                 }
             )
     return items
@@ -110,9 +111,9 @@ def _attach_profile_names(report_items: list[dict[str, Any]], config: AppConfig)
 def _latest_reports_by_profile(report_items: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     latest: dict[str, dict[str, Any]] = {}
     for item in report_items:
-        existing = latest.get(item["profile"])
+        existing = latest.get(item["report_key"])
         if existing is None or item["date"] > existing["date"]:
-            latest[item["profile"]] = item
+            latest[item["report_key"]] = item
     return latest
 
 
@@ -121,10 +122,10 @@ def _write_latest_reports(
     latest_output_dir: Path,
 ) -> dict[str, Path]:
     latest_paths: dict[str, Path] = {}
-    for profile, item in latest_by_profile.items():
-        destination = latest_output_dir / f"{profile}.html"
+    for report_key, item in latest_by_profile.items():
+        destination = latest_output_dir / f"{report_key}.html"
         shutil.copy2(item["path"], destination)
-        latest_paths[profile] = destination
+        latest_paths[report_key] = destination
     return latest_paths
 
 
@@ -134,6 +135,42 @@ def _index_item_for_latest(item: dict[str, Any], path: Path) -> dict[str, Any]:
         "filename": path.name,
         "href": f"latest/{path.name}",
     }
+
+
+def _latest_groups(
+    latest_by_profile: dict[str, dict[str, Any]],
+    latest_paths: dict[str, Path],
+) -> list[dict[str, Any]]:
+    grouped: dict[str, dict[str, Any]] = {}
+    for report_key, item in latest_by_profile.items():
+        profile = item["profile"]
+        group = grouped.setdefault(
+            profile,
+            {
+                "profile": profile,
+                "profile_display_name": item["profile_display_name"],
+                "profile_display_name_zh": item["profile_display_name_zh"],
+                "windows": [],
+            },
+        )
+        group["windows"].append(_index_item_for_latest(item, latest_paths[report_key]))
+    for group in grouped.values():
+        group["windows"].sort(key=lambda item: (item["report_suffix"] != "", item["window_label"]))
+    return sorted(grouped.values(), key=lambda item: item["profile"])
+
+
+def _report_metadata(report_dir: Path, html_source: Path) -> dict[str, Any]:
+    json_path = report_dir / f"{html_source.stem}.json"
+    if not json_path.exists():
+        return {}
+    try:
+        return json.loads(json_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+
+
+def _report_key(profile: str, report_suffix: str) -> str:
+    return f"{profile}-{report_suffix}" if report_suffix else profile
 
 
 def _render_index(data: dict[str, Any]) -> str:
@@ -155,23 +192,27 @@ INDEX_TEMPLATE = """
   <style>
     :root {
       color-scheme: light;
-      --bg: #f6f7f5;
-      --fg: #1f2933;
+      --bg: #f4f6f8;
+      --fg: #17202a;
       --muted: #667085;
-      --line: #d8d9d4;
+      --line: #d6dce2;
       --panel: #ffffff;
-      --accent: #0f766e;
-      --accent-soft: #d8f3ee;
+      --accent: #0b6b74;
+      --accent-strong: #084c61;
+      --accent-soft: #dff3f5;
+      --shadow: 0 10px 28px rgba(22, 34, 51, 0.08);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      background: var(--bg);
+      background:
+        linear-gradient(180deg, #eef4f7 0, var(--bg) 280px),
+        var(--bg);
       color: var(--fg);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       line-height: 1.55;
     }
-    header, main { max-width: 1080px; margin: 0 auto; padding: 24px; }
+    header, main { max-width: 1120px; margin: 0 auto; padding: 28px 24px; }
     header { border-bottom: 1px solid var(--line); }
     h1 { margin: 0 0 8px; font-size: 32px; letter-spacing: 0; }
     h2 { margin-top: 28px; font-size: 22px; }
@@ -181,8 +222,9 @@ INDEX_TEMPLATE = """
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 18px;
+      padding: 20px;
       margin: 18px 0;
+      box-shadow: var(--shadow);
     }
     .grid {
       display: grid;
@@ -193,7 +235,8 @@ INDEX_TEMPLATE = """
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 16px;
+      padding: 18px;
+      box-shadow: var(--shadow);
     }
     .card h3 { margin: 0 0 8px; font-size: 18px; }
     table { width: 100%; border-collapse: collapse; background: var(--panel); }
@@ -205,6 +248,28 @@ INDEX_TEMPLATE = """
       border-radius: 999px;
       padding: 3px 9px;
       font-size: 13px;
+    }
+    .eyebrow {
+      margin: 0 0 6px;
+      color: var(--accent-strong);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .button {
+      display: inline-block;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      padding: 8px 12px;
+      text-decoration: none;
+    }
+    .button.secondary {
+      background: var(--accent-strong);
+      border-color: var(--accent-strong);
     }
   </style>
 </head>
@@ -221,14 +286,23 @@ INDEX_TEMPLATE = """
   <main>
     <section class="panel">
       <h2>最新报告</h2>
-      {% if latest_reports %}
+      {% if latest_groups %}
       <div class="grid">
-        {% for report in latest_reports %}
+        {% for group in latest_groups %}
         <article class="card">
-          <h3>{{ report.profile_display_name }}</h3>
-          <p class="muted">{{ report.profile_display_name_zh }}</p>
-          <p><span class="badge">{{ report.date }}</span></p>
-          <p><a href="{{ report.href }}">打开最新报告</a></p>
+          <p class="eyebrow">{{ group.profile }}</p>
+          <h3>{{ group.profile_display_name }}</h3>
+          <p class="muted">{{ group.profile_display_name_zh }}</p>
+          <div class="actions">
+            {% for report in group.windows %}
+            <a
+              class="button {{ 'secondary' if report.report_suffix else '' }}"
+              href="{{ report.href }}"
+            >
+              {{ report.window_label }} · {{ report.date }}
+            </a>
+            {% endfor %}
+          </div>
         </article>
         {% endfor %}
       </div>
@@ -242,12 +316,13 @@ INDEX_TEMPLATE = """
       {% if reports %}
       <table>
         <thead>
-          <tr><th>日期</th><th>Profile</th><th>报告</th></tr>
+          <tr><th>日期</th><th>窗口</th><th>Profile</th><th>报告</th></tr>
         </thead>
         <tbody>
           {% for report in reports %}
           <tr>
             <td>{{ report.date }}</td>
+            <td>{{ report.window_label }}</td>
             <td>{{ report.profile }}</td>
             <td><a href="{{ report.href }}">{{ report.filename }}</a></td>
           </tr>

@@ -65,7 +65,7 @@ def test_build_search_query_includes_categories_keywords_and_utc_window() -> Non
     assert 'all:"quantum transport"' not in positive_part
     assert 'all:"machine learning"' in query
     assert "all:LLM" in query
-    assert "submittedDate:[202312261230 TO 202401021230]" in query
+    assert "submittedDate:[202401010030 TO 202401021230]" in query
 
 
 def test_spt_profile_query_contains_anomaly_and_symmetry_terms() -> None:

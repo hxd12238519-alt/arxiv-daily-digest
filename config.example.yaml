@@ -31,7 +31,7 @@ profiles:
       max_results_per_day: 500
       page_size: 50
       request_interval_seconds: 3
-      lookback_hours: 168
+      lookback_hours: 36
       timezone: Asia/Tokyo
     topics:
       - topic: "Strongly Correlated Systems"
@@ -162,7 +162,7 @@ profiles:
       max_results_per_day: 100
       page_size: 50
       request_interval_seconds: 3
-      lookback_hours: 168
+      lookback_hours: 36
       timezone: Asia/Tokyo
     topics:
       - topic: "Symmetry-Protected Topological Phases / SPT"
@@ -193,6 +193,7 @@ llm:
   timeout_seconds: 60
   max_retries: 3
   request_interval_seconds: 1
+  concurrent_requests: 4
   mode: abstract_only
 
 providers:

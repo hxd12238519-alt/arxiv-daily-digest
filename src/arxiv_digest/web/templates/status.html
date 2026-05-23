@@ -6,6 +6,7 @@
     <dt>Run ID</dt><dd>{{ run.id }}</dd>
     <dt>Profile</dt><dd>{{ run.profile }} / {{ profile_display_name_zh }}</dd>
     <dt>Provider</dt><dd>{{ run.provider }}</dd>
+    <dt>窗口</dt><dd>{{ "近 7 天" if run.report_suffix == "7d" else "近 36 小时" }}</dd>
     <dt>Status</dt><dd id="run-status">{{ run.status.value }}</dd>
     <dt>Message</dt><dd id="run-message">{{ run.status_message or "Queued." }}</dd>
   </dl>

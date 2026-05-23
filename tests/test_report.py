@@ -65,10 +65,41 @@ def test_generate_markdown_html_and_json_reports(tmp_path: Path) -> None:
     assert "中文摘要" in html
     assert "研究问题" not in html
     assert payload["report_mode"] == "abstract_translation"
+    assert payload["window_label"] == "近 36 小时"
+    assert payload["report_suffix"] == ""
     assert len(payload["papers"]) == 2
     papers_by_title = {item["title_en"]: item for item in payload["papers"]}
     assert papers_by_title[paper.title]["title_zh"] == analysis.title_zh
     assert later_paper.title in papers_by_title
+
+
+def test_generate_suffix_report(tmp_path: Path) -> None:
+    config = load_config()
+    config.database.path = str(tmp_path / "digest.sqlite3")
+    config.output.report_dir = str(tmp_path / "reports")
+    config.output.min_relevance_score = 0
+
+    storage = Storage(config.database.path)
+    storage.init_db()
+    paper = _paper()
+    paper_id, _ = storage.insert_paper(paper)
+    analysis = MockProvider(config, "mock", "mock-v1").analyze_paper(paper)
+    storage.save_analysis(paper_id, "physics_student", "mock", "mock-v1", analysis)
+
+    generated = generate_reports(
+        storage,
+        config,
+        report_date=date(2024, 1, 1),
+        formats=["all"],
+        profile_name="physics_student",
+        lookback_hours=168,
+        report_suffix="7d",
+    )
+    payload = json.loads(generated["json"].read_text(encoding="utf-8"))
+
+    assert generated["html"].name == "2024-01-01-physics_student-7d.html"
+    assert payload["window_label"] == "近 7 天"
+    assert payload["report_suffix"] == "7d"
 
 
 def _paper(

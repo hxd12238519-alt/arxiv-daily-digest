@@ -7,7 +7,7 @@
 ## 功能
 
 - 每天抓取 arXiv 物理方向论文。
-- `physics_student` 抓取 arXiv `cond-mat.str-el` 强关联电子分类下 7 天窗口内的新论文，不再用关键词二次过滤。
+- `physics_student` 默认抓取 arXiv `cond-mat.str-el` 强关联电子分类下近 36 小时新论文，不再用关键词二次过滤；网页同时提供近 7 天回看入口。
 - 默认不检索 AI/ML/LLM 论文。
 - 通过 `excluded_categories` 和 `excluded_keywords` 排除机器学习中心论文。
 - 按强关联体系、莫特物理、Hubbard 模型、量子磁性、非常规超导、重费米子、莫尔强关联材料等主题分类。
@@ -267,7 +267,7 @@ profiles:
       categories:
         - cond-mat.str-el
       keywords: []
-      lookback_hours: 168
+      lookback_hours: 36
       max_results_per_day: 500
       excluded_categories:
         - cs.AI
@@ -299,7 +299,7 @@ profiles:
         - cobordism
 ```
 
-`categories` 和 `keywords` 是正向检索条件；`excluded_categories` 和 `excluded_keywords` 用于排除机器学习中心论文。`physics_student` 的 `keywords: []` 表示抓取 `cond-mat.str-el` 分类下所有新文章，`max_results_per_day: 500` 用于避免 7 天窗口内被 100 篇截断。代码会优先在 arXiv query 中使用 `ANDNOT`，如果复杂 query 失败，会回退到正向检索后本地 post-filter。
+`categories` 和 `keywords` 是正向检索条件；`excluded_categories` 和 `excluded_keywords` 用于排除机器学习中心论文。`physics_student` 的 `keywords: []` 表示抓取 `cond-mat.str-el` 分类下所有新文章，`max_results_per_day: 500` 用于避免回看窗口内被 100 篇截断。代码会优先在 arXiv query 中使用 `ANDNOT`，如果复杂 query 失败，会回退到正向检索后本地 post-filter。
 
 ## 彻底排除机器学习论文
 
@@ -445,13 +445,16 @@ ARXIV_DIGEST_WEB_PUBLIC_BASE_URL=https://your-domain.example
 
 ## GitHub Actions
 
-工作流在 `.github/workflows/daily.yml`，每天日本时间 09:00 运行。默认使用 `deepseek`，需要在 GitHub Secrets 设置 `DEEPSEEK_API_KEY`。默认会生成 `physics_student` 和 `spt_anomaly_generalized_symmetry` 两个页面。
+工作流在 `.github/workflows/daily.yml`，每天日本时间 09:00 运行。默认使用 `deepseek`，需要在 GitHub Secrets 设置 `DEEPSEEK_API_KEY`。默认会为 `physics_student` 和 `spt_anomaly_generalized_symmetry` 都生成近 36 小时和近 7 天两个页面。
 
 工作流会：
 
 1. 运行每日抓取、分析和报告生成。
-2. 构建 `site/` 静态站。
-3. 部署到 GitHub Pages。
+2. 通过 GitHub Actions cache 复用 `data/` SQLite 数据库，避免重复分析已经处理过的 arXiv ID。
+3. 构建 `site/` 静态站。
+4. 部署到 GitHub Pages。
+
+默认并行请求数为 4，可在 GitHub Variables 里用 `ARXIV_DIGEST_LLM_CONCURRENCY` 调整。日常窗口默认 `ARXIV_DIGEST_DAILY_LOOKBACK_HOURS=36`，近 7 天回看窗口默认 `ARXIV_DIGEST_BACKFILL_LOOKBACK_HOURS=168`。
 
 在 GitHub Actions 的 `Run daily digest` 步骤中，每篇论文分析完成后会输出一行进度条，例如：
 

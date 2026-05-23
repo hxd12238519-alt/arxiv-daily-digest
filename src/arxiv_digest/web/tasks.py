@@ -20,17 +20,21 @@ def get_or_create_run(
     profile_name: str,
     provider: str,
     force: bool = False,
+    lookback_hours: int | None = None,
+    report_suffix: str = "",
 ) -> tuple[TaskRun, bool]:
     storage = Storage(config.database.path)
     storage.init_db()
     if not force:
-        active = storage.get_active_task_run(profile_name)
+        active = storage.get_active_task_run(profile_name, report_suffix=report_suffix)
         if active:
             return active, False
     run = storage.create_task_run(
         str(uuid.uuid4()),
         profile_name,
         provider,
+        lookback_hours=lookback_hours,
+        report_suffix=report_suffix,
         status=TaskRunStatus.QUEUED,
         status_message="Queued.",
     )
@@ -45,6 +49,8 @@ def run_digest_task(
     provider: str,
     limit: int | None = None,
     sample: bool = False,
+    lookback_hours: int | None = None,
+    report_suffix: str = "",
 ) -> None:
     storage = Storage(config.database.path)
     storage.init_db()
@@ -61,6 +67,8 @@ def run_digest_task(
             provider=provider,
             limit=limit,
             sample=sample,
+            lookback_hours=lookback_hours,
+            report_suffix=report_suffix,
         )
         paths = result.reports
         storage.update_task_run(
@@ -86,11 +94,21 @@ def run_digest_task(
         )
 
 
-def existing_report_paths(config: AppConfig, profile_name: str) -> dict[str, str]:
+def existing_report_paths(
+    config: AppConfig,
+    profile_name: str,
+    *,
+    report_suffix: str = "",
+) -> dict[str, str]:
     today = today_for_profile(config, profile_name)
     return {
         key: str(path)
-        for key, path in report_paths(config, report_date=today, profile_name=profile_name).items()
+        for key, path in report_paths(
+            config,
+            report_date=today,
+            profile_name=profile_name,
+            report_suffix=report_suffix,
+        ).items()
     }
 
 

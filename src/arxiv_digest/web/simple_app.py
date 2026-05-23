@@ -15,7 +15,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from arxiv_digest.config import AppConfig, load_config
 from arxiv_digest.models import TaskRun
 from arxiv_digest.report import report_exists, report_paths
-from arxiv_digest.services import has_today_report, resolve_provider, today_for_profile
+from arxiv_digest.services import has_today_window_report, resolve_provider, today_for_profile
 from arxiv_digest.storage import Storage
 from arxiv_digest.web.security import (
     ForceAuthError,
@@ -111,14 +111,16 @@ class DigestRequestHandler(BaseHTTPRequestHandler):
         force = _first(query, "force") == "true"
         today = today_for_profile(state.config, profile_name)
         ready = report_exists(state.config, report_date=today, profile_name=profile_name)
+        seven_day_ready = report_exists(
+            state.config,
+            report_date=today,
+            profile_name=profile_name,
+            report_suffix="7d",
+        )
         public_mode = self._is_public_mode()
         run_requires_token = self._run_requires_token()
         if force and not self._assert_run_allowed(force=True, require_token=True):
             return
-        if ready and not force:
-            self._redirect(f"/reports/today?profile={profile_name}")
-            return
-
         storage = Storage(state.config.database.path)
         storage.init_db()
         active = storage.get_active_task_run(profile_name)
@@ -129,7 +131,7 @@ class DigestRequestHandler(BaseHTTPRequestHandler):
         auto_run_allowed = state.auto_run_on_open and (
             not run_requires_token or state.config.web.allow_public_auto_run
         )
-        if auto_run_allowed:
+        if auto_run_allowed and not ready:
             run, created = get_or_create_run(
                 state.config,
                 profile_name=profile_name,
@@ -152,6 +154,7 @@ class DigestRequestHandler(BaseHTTPRequestHandler):
                     "provider": provider,
                     "today": today.isoformat(),
                     "report_ready": ready,
+                    "seven_day_ready": seven_day_ready,
                     "admin_token_status": token_status(),
                     "public_mode": public_mode,
                     "run_requires_token": run_requires_token,
@@ -166,7 +169,13 @@ class DigestRequestHandler(BaseHTTPRequestHandler):
             _first(query, "profile") or state.default_profile
         )
         today = today_for_profile(state.config, profile_name)
-        self._handle_report_date(today.isoformat(), {"profile": [profile_name]})
+        self._handle_report_date(
+            today.isoformat(),
+            {
+                "profile": [profile_name],
+                "suffix": [_first(query, "suffix") or ""],
+            },
+        )
 
     def _handle_report_date(self, report_date: str, query: dict[str, list[str]]) -> None:
         state = self.server.state
@@ -174,7 +183,13 @@ class DigestRequestHandler(BaseHTTPRequestHandler):
             _first(query, "profile") or state.default_profile
         )
         target_date = date.fromisoformat(report_date)
-        paths = report_paths(state.config, report_date=target_date, profile_name=profile_name)
+        suffix = _first(query, "suffix") or ""
+        paths = report_paths(
+            state.config,
+            report_date=target_date,
+            profile_name=profile_name,
+            report_suffix=suffix,
+        )
         if not paths["json"].exists():
             self._send_text("Report not found", status=HTTPStatus.NOT_FOUND)
             return
@@ -196,7 +211,13 @@ class DigestRequestHandler(BaseHTTPRequestHandler):
             _first(query, "profile") or state.default_profile
         )
         today = today_for_profile(state.config, profile_name)
-        paths = report_paths(state.config, report_date=today, profile_name=profile_name)
+        suffix = _first(query, "suffix") or ""
+        paths = report_paths(
+            state.config,
+            report_date=today,
+            profile_name=profile_name,
+            report_suffix=suffix,
+        )
         self._send_json(
             {
                 "profile": profile_name,
@@ -220,9 +241,19 @@ class DigestRequestHandler(BaseHTTPRequestHandler):
         provider = resolve_provider(
             state.config, str(payload.get("provider") or state.default_provider)
         )
+        report_suffix = str(payload.get("report_suffix") or "").strip()
+        lookback_hours = payload.get("lookback_hours")
+        lookback_hours_int = int(lookback_hours) if lookback_hours is not None else None
         limit = payload.get("limit")
         limit_int = int(limit) if limit is not None else None
-        if has_today_report(state.config, profile_name) and not force:
+        if (
+            has_today_window_report(
+                state.config,
+                profile_name,
+                report_suffix=report_suffix,
+            )
+            and not force
+        ):
             self._send_json(
                 {
                     "run_id": None,
@@ -237,9 +268,19 @@ class DigestRequestHandler(BaseHTTPRequestHandler):
             profile_name=profile_name,
             provider=provider,
             force=force,
+            lookback_hours=lookback_hours_int,
+            report_suffix=report_suffix,
         )
         if created:
-            _start_background_run(state.config, run.id, profile_name, provider, limit=limit_int)
+            _start_background_run(
+                state.config,
+                run.id,
+                profile_name,
+                provider,
+                limit=limit_int,
+                lookback_hours=lookback_hours_int,
+                report_suffix=report_suffix,
+            )
         self._send_json(
             {
                 "run_id": run.id,
@@ -360,6 +401,8 @@ def _start_background_run(
     provider: str,
     *,
     limit: int | None = None,
+    lookback_hours: int | None = None,
+    report_suffix: str = "",
 ) -> None:
     thread = threading.Thread(
         target=run_digest_task,
@@ -369,6 +412,8 @@ def _start_background_run(
             "profile_name": profile_name,
             "provider": provider,
             "limit": limit,
+            "lookback_hours": lookback_hours,
+            "report_suffix": report_suffix,
             "sample": web_should_use_sample_feed(),
         },
         daemon=True,
@@ -386,6 +431,8 @@ def _run_payload(run: TaskRun) -> dict[str, object]:
         "run_id": run.id,
         "profile": run.profile,
         "provider": run.provider,
+        "lookback_hours": run.lookback_hours,
+        "report_suffix": run.report_suffix,
         "status": run.status.value,
         "status_message": run.status_message,
         "started_at": run.started_at.isoformat() if run.started_at else None,
@@ -394,7 +441,10 @@ def _run_payload(run: TaskRun) -> dict[str, object]:
         "report_md_path": run.report_md_path,
         "report_html_path": run.report_html_path,
         "report_json_path": run.report_json_path,
-        "report_url": f"/reports/today?profile={run.profile}"
+        "report_url": (
+            f"/reports/today?profile={run.profile}"
+            f"{'&suffix=' + run.report_suffix if run.report_suffix else ''}"
+        )
         if run.status.value == "succeeded"
         else None,
     }

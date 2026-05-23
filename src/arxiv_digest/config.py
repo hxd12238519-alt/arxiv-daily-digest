@@ -164,7 +164,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
                 "max_results_per_day": 500,
                 "page_size": 50,
                 "request_interval_seconds": 3,
-                "lookback_hours": 168,
+                "lookback_hours": 36,
                 "timezone": "Asia/Tokyo",
             },
             "topics": PHYSICS_STUDENT_TOPICS,
@@ -185,7 +185,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
                 "max_results_per_day": 100,
                 "page_size": 50,
                 "request_interval_seconds": 3,
-                "lookback_hours": 168,
+                "lookback_hours": 36,
                 "timezone": "Asia/Tokyo",
             },
             "topics": SPT_ANOMALY_TOPICS,
@@ -198,6 +198,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "timeout_seconds": 60,
         "max_retries": 3,
         "request_interval_seconds": 1,
+        "concurrent_requests": 4,
         "mode": "abstract_only",
     },
     "providers": {
@@ -302,6 +303,7 @@ class LLMConfig(BaseModel):
     timeout_seconds: float = 60
     max_retries: int = 3
     request_interval_seconds: float = 1
+    concurrent_requests: int = 1
     mode: str = "abstract_only"
 
 
@@ -449,6 +451,7 @@ def _apply_environment_overrides(data: dict[str, Any]) -> None:
         "ARXIV_DIGEST_PROVIDER": ("llm", "provider"),
         "ARXIV_DIGEST_LLM_PROVIDER": ("llm", "provider"),
         "ARXIV_DIGEST_LLM_MODEL": ("llm", "model"),
+        "ARXIV_DIGEST_LLM_CONCURRENCY": ("llm", "concurrent_requests"),
         "ARXIV_DIGEST_DATABASE_PATH": ("database", "path"),
         "ARXIV_DIGEST_REPORT_DIR": ("output", "report_dir"),
         "ARXIV_DIGEST_WEB_HOST": ("web", "host"),

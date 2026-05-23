@@ -92,6 +92,8 @@ CREATE TABLE IF NOT EXISTS task_runs (
   id TEXT PRIMARY KEY,
   profile TEXT NOT NULL,
   provider TEXT NOT NULL,
+  lookback_hours INTEGER,
+  report_suffix TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL,
   status_message TEXT,
   started_at TEXT,
@@ -139,7 +141,10 @@ MIGRATIONS: dict[str, dict[str, str]] = {
         "why_relevant_zh": "TEXT NOT NULL DEFAULT '摘要中未明确说明。'",
         "suggested_reading_priority": "TEXT NOT NULL DEFAULT 'low'",
     },
-    "task_runs": {},
+    "task_runs": {
+        "lookback_hours": "INTEGER",
+        "report_suffix": "TEXT NOT NULL DEFAULT ''",
+    },
 }
 
 
@@ -150,6 +155,7 @@ class Storage:
     def init_db(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as conn:
+            conn.execute("PRAGMA journal_mode = WAL")
             conn.executescript(SCHEMA_SQL)
             self._migrate_schema(conn)
             conn.executescript(INDEX_SQL)
@@ -575,6 +581,8 @@ class Storage:
         profile: str,
         provider: str,
         *,
+        lookback_hours: int | None = None,
+        report_suffix: str = "",
         status: TaskRunStatus = TaskRunStatus.QUEUED,
         status_message: str | None = None,
     ) -> TaskRun:
@@ -583,10 +591,21 @@ class Storage:
             conn.execute(
                 """
                 INSERT INTO task_runs (
-                  id, profile, provider, status, status_message, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                  id, profile, provider, lookback_hours, report_suffix, status,
+                  status_message, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (run_id, profile, provider, status.value, status_message, now, now),
+                (
+                    run_id,
+                    profile,
+                    provider,
+                    lookback_hours,
+                    report_suffix,
+                    status.value,
+                    status_message,
+                    now,
+                    now,
+                ),
             )
             row = conn.execute("SELECT * FROM task_runs WHERE id = ?", (run_id,)).fetchone()
         if row is None:
@@ -598,15 +617,15 @@ class Storage:
             row = conn.execute("SELECT * FROM task_runs WHERE id = ?", (run_id,)).fetchone()
         return _task_run_from_row(row) if row else None
 
-    def get_active_task_run(self, profile: str) -> TaskRun | None:
+    def get_active_task_run(self, profile: str, report_suffix: str = "") -> TaskRun | None:
         with self._connect() as conn:
             row = conn.execute(
                 """
                 SELECT * FROM task_runs
-                WHERE profile = ? AND status IN ('queued', 'running')
+                WHERE profile = ? AND report_suffix = ? AND status IN ('queued', 'running')
                 ORDER BY created_at DESC LIMIT 1
                 """,
-                (profile,),
+                (profile, report_suffix),
             ).fetchone()
         return _task_run_from_row(row) if row else None
 
@@ -677,9 +696,10 @@ class Storage:
 
     def _connect(self) -> sqlite3.Connection:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        conn = sqlite3.connect(self.path)
+        conn = sqlite3.connect(self.path, timeout=30)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute("PRAGMA busy_timeout = 30000")
         return conn
 
     def _migrate_schema(self, conn: sqlite3.Connection) -> None:
@@ -744,10 +764,14 @@ def _job_from_row(row: sqlite3.Row) -> AnalysisJob:
 
 
 def _task_run_from_row(row: sqlite3.Row) -> TaskRun:
+    keys = row.keys()
+    lookback_hours = row["lookback_hours"] if "lookback_hours" in keys else None
     return TaskRun(
         id=row["id"],
         profile=row["profile"],
         provider=row["provider"],
+        lookback_hours=int(lookback_hours) if lookback_hours is not None else None,
+        report_suffix=row["report_suffix"] if "report_suffix" in keys else "",
         status=TaskRunStatus(row["status"]),
         status_message=row["status_message"],
         started_at=parse_datetime(row["started_at"]) if row["started_at"] else None,

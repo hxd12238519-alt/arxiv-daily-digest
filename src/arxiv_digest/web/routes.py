@@ -6,13 +6,13 @@ from datetime import date
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
 from arxiv_digest.models import TaskRun
 from arxiv_digest.report import report_exists, report_paths
-from arxiv_digest.services import has_today_report, resolve_provider, today_for_profile
+from arxiv_digest.services import has_today_window_report, resolve_provider, today_for_profile
 from arxiv_digest.storage import Storage
 from arxiv_digest.web.security import (
     ForceAuthError,
@@ -31,6 +31,8 @@ class RunRequest(BaseModel):
     provider: str | None = None
     force: bool = False
     limit: int | None = Field(default=None, ge=1, le=100)
+    lookback_hours: int | None = Field(default=None, ge=1, le=168)
+    report_suffix: str = ""
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -47,6 +49,12 @@ def index(
     provider_name = resolve_provider(config, provider or request.app.state.default_provider)
     today = today_for_profile(config, profile_name)
     report_ready = report_exists(config, report_date=today, profile_name=profile_name)
+    seven_day_ready = report_exists(
+        config,
+        report_date=today,
+        profile_name=profile_name,
+        report_suffix="7d",
+    )
     public_mode = _is_public_mode(request)
     run_requires_token = _run_requires_token(request)
 
@@ -57,9 +65,6 @@ def index(
             authorization=authorization,
         )
 
-    if report_ready and not force:
-        return RedirectResponse(url=f"/reports/today?profile={profile_name}", status_code=303)
-
     storage = Storage(config.database.path)
     storage.init_db()
     active = storage.get_active_task_run(profile_name)
@@ -69,7 +74,7 @@ def index(
     auto_run_allowed = request.app.state.auto_run_on_open and (
         not run_requires_token or config.web.allow_public_auto_run
     )
-    if auto_run_allowed:
+    if auto_run_allowed and not report_ready:
         run, created = get_or_create_run(
             config,
             profile_name=profile_name,
@@ -98,6 +103,7 @@ def index(
             "provider": provider_name,
             "today": today.isoformat(),
             "report_ready": report_ready,
+            "seven_day_ready": seven_day_ready,
             "admin_token_status": token_status(),
             "public_mode": public_mode,
             "run_requires_token": run_requires_token,
@@ -107,19 +113,29 @@ def index(
 
 
 @router.get("/reports/today", response_class=HTMLResponse)
-def today_report(request: Request, profile: str | None = None):
+def today_report(request: Request, profile: str | None = None, suffix: str = ""):
     config = request.app.state.digest_config
     profile_name, _ = config.get_profile(profile or request.app.state.default_profile)
     today = today_for_profile(config, profile_name)
-    return report_by_date(request, today.isoformat(), profile_name)
+    return report_by_date(request, today.isoformat(), profile_name, suffix)
 
 
 @router.get("/reports/{report_date}", response_class=HTMLResponse)
-def report_by_date(request: Request, report_date: str, profile: str | None = None):
+def report_by_date(
+    request: Request,
+    report_date: str,
+    profile: str | None = None,
+    suffix: str = "",
+):
     config = request.app.state.digest_config
     profile_name, _ = config.get_profile(profile or request.app.state.default_profile)
     target_date = date.fromisoformat(report_date)
-    paths = report_paths(config, report_date=target_date, profile_name=profile_name)
+    paths = report_paths(
+        config,
+        report_date=target_date,
+        profile_name=profile_name,
+        report_suffix=suffix,
+    )
     if not paths["json"].exists():
         raise HTTPException(status_code=404, detail="Report not found.")
     data = json.loads(paths["json"].read_text(encoding="utf-8"))
@@ -137,11 +153,16 @@ def api_run_status(run_id: str, request: Request):
 
 
 @router.get("/api/latest")
-def api_latest(request: Request, profile: str | None = None):
+def api_latest(request: Request, profile: str | None = None, suffix: str = ""):
     config = request.app.state.digest_config
     profile_name, _ = config.get_profile(profile or request.app.state.default_profile)
     today = today_for_profile(config, profile_name)
-    paths = report_paths(config, report_date=today, profile_name=profile_name)
+    paths = report_paths(
+        config,
+        report_date=today,
+        profile_name=profile_name,
+        report_suffix=suffix,
+    )
     return {
         "profile": profile_name,
         "date": today.isoformat(),
@@ -166,7 +187,11 @@ def api_run(
     profile_name, _ = config.get_profile(payload.profile or request.app.state.default_profile)
     provider_name = resolve_provider(config, payload.provider or request.app.state.default_provider)
 
-    if has_today_report(config, profile_name) and not payload.force:
+    report_suffix = payload.report_suffix.strip()
+    if (
+        has_today_window_report(config, profile_name, report_suffix=report_suffix)
+        and not payload.force
+    ):
         return JSONResponse(
             {
                 "run_id": None,
@@ -181,6 +206,8 @@ def api_run(
         profile_name=profile_name,
         provider=provider_name,
         force=payload.force,
+        lookback_hours=payload.lookback_hours,
+        report_suffix=report_suffix,
     )
     if created:
         background_tasks.add_task(
@@ -190,6 +217,8 @@ def api_run(
             profile_name=profile_name,
             provider=provider_name,
             limit=payload.limit,
+            lookback_hours=payload.lookback_hours,
+            report_suffix=report_suffix,
             sample=web_should_use_sample_feed(),
         )
     return {
@@ -242,6 +271,8 @@ def _run_payload(run: TaskRun) -> dict[str, object]:
         "run_id": run.id,
         "profile": run.profile,
         "provider": run.provider,
+        "lookback_hours": run.lookback_hours,
+        "report_suffix": run.report_suffix,
         "status": run.status.value,
         "status_message": run.status_message,
         "started_at": run.started_at.isoformat() if run.started_at else None,
@@ -250,7 +281,10 @@ def _run_payload(run: TaskRun) -> dict[str, object]:
         "report_md_path": run.report_md_path,
         "report_html_path": run.report_html_path,
         "report_json_path": run.report_json_path,
-        "report_url": f"/reports/today?profile={run.profile}"
+        "report_url": (
+            f"/reports/today?profile={run.profile}"
+            f"{'&suffix=' + run.report_suffix if run.report_suffix else ''}"
+        )
         if run.status.value == "succeeded"
         else None,
     }

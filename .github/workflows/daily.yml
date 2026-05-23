@@ -31,16 +31,27 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Clean generated state
+      - name: Restore analysis cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: arxiv-digest-db-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            arxiv-digest-db-${{ github.ref_name }}-
+
+      - name: Clean generated reports
         run: |
           find reports -type f ! -name .gitkeep -delete
-          find data -type f ! -name .gitkeep -delete
+          mkdir -p data
 
       - name: Run daily digest
         env:
           ARXIV_DIGEST_PROVIDER: ${{ vars.ARXIV_DIGEST_PROVIDER || 'deepseek' }}
           ARXIV_DIGEST_DEFAULT_PROFILE: ${{ vars.ARXIV_DIGEST_DEFAULT_PROFILE || 'physics_student' }}
           ARXIV_DIGEST_EXTRA_PROFILES: ${{ vars.ARXIV_DIGEST_EXTRA_PROFILES || 'spt_anomaly_generalized_symmetry' }}
+          ARXIV_DIGEST_DAILY_LOOKBACK_HOURS: ${{ vars.ARXIV_DIGEST_DAILY_LOOKBACK_HOURS || '36' }}
+          ARXIV_DIGEST_BACKFILL_LOOKBACK_HOURS: ${{ vars.ARXIV_DIGEST_BACKFILL_LOOKBACK_HOURS || '168' }}
+          ARXIV_DIGEST_LLM_CONCURRENCY: ${{ vars.ARXIV_DIGEST_LLM_CONCURRENCY || '4' }}
           ARXIV_DIGEST_WEB_PUBLIC_BASE_URL: ${{ vars.ARXIV_DIGEST_WEB_PUBLIC_BASE_URL || '' }}
           DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL || '' }}
           DASHSCOPE_MODEL: ${{ vars.DASHSCOPE_MODEL || '' }}
@@ -55,12 +66,31 @@ jobs:
         run: |
           python -m arxiv_digest run-daily \
             --profile "$ARXIV_DIGEST_DEFAULT_PROFILE" \
-            --provider "$ARXIV_DIGEST_PROVIDER"
+            --provider "$ARXIV_DIGEST_PROVIDER" \
+            --lookback-hours "$ARXIV_DIGEST_DAILY_LOOKBACK_HOURS"
+          python -m arxiv_digest run-daily \
+            --profile "$ARXIV_DIGEST_DEFAULT_PROFILE" \
+            --provider "$ARXIV_DIGEST_PROVIDER" \
+            --lookback-hours "$ARXIV_DIGEST_BACKFILL_LOOKBACK_HOURS" \
+            --report-suffix 7d
           for profile in $ARXIV_DIGEST_EXTRA_PROFILES; do
             python -m arxiv_digest run-daily \
               --profile "$profile" \
-              --provider "$ARXIV_DIGEST_PROVIDER"
+              --provider "$ARXIV_DIGEST_PROVIDER" \
+              --lookback-hours "$ARXIV_DIGEST_DAILY_LOOKBACK_HOURS"
+            python -m arxiv_digest run-daily \
+              --profile "$profile" \
+              --provider "$ARXIV_DIGEST_PROVIDER" \
+              --lookback-hours "$ARXIV_DIGEST_BACKFILL_LOOKBACK_HOURS" \
+              --report-suffix 7d
           done
+
+      - name: Save analysis cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data
+          key: arxiv-digest-db-${{ github.ref_name }}-${{ github.run_id }}
 
       - name: Build static site
         env:

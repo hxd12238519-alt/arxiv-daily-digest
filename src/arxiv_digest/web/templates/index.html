@@ -1,12 +1,17 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="panel">
-  <h2>今日状态</h2>
+<section class="hero-panel">
+  <div>
+    <p class="eyebrow">arXiv digest control</p>
+    <h2>今日状态</h2>
+    <p class="muted">默认日报只处理近 36 小时；需要回看时可手动生成或打开近 7 天窗口。</p>
+  </div>
   <dl class="kv">
     <dt>Profile</dt><dd>{{ profile }} / {{ profile_display_name_zh }}</dd>
     <dt>Provider</dt><dd>{{ provider }}</dd>
     <dt>日期</dt><dd>{{ today }}</dd>
-    <dt>今日报告</dt><dd>{{ "已生成" if report_ready else "不存在" }}</dd>
+    <dt>近 36 小时</dt><dd>{{ "已生成" if report_ready else "不存在" }}</dd>
+    <dt>近 7 天</dt><dd>{{ "已生成" if seven_day_ready else "不存在" }}</dd>
     <dt>访问模式</dt><dd>{{ "公开只读" if public_mode else "本地" }}</dd>
     <dt>生成权限</dt><dd>{{ "需要 WEB_ADMIN_TOKEN" if run_requires_token else "本机可直接运行" }}</dd>
     <dt>WEB_ADMIN_TOKEN</dt><dd>{{ admin_token_status }}</dd>
@@ -17,24 +22,49 @@
   {% if public_mode and run_requires_token and not report_ready %}
     <p class="notice">当前是公开分享模式。访问者可以查看已生成报告，但生成新报告需要管理员 token，避免重复消耗真实 LLM API。</p>
   {% endif %}
-  <div class="actions">
-    <button
-      data-run-profile="{{ profile }}"
-      data-run-provider="{{ provider }}"
-      data-force="false"
-      data-token-required="{{ 'true' if run_requires_token else 'false' }}"
-    >
-      开始抓取
-    </button>
-    <button
-      data-run-profile="{{ profile }}"
-      data-run-provider="{{ provider }}"
-      data-force="true"
-      data-token-required="true"
-    >
-      强制刷新
-    </button>
-    <a class="button-link" href="/reports/today?profile={{ profile }}">最新报告入口</a>
-  </div>
+</section>
+
+<section class="window-grid" aria-label="报告窗口">
+  <article class="window-card">
+    <div>
+      <p class="eyebrow">daily</p>
+      <h3>近 36 小时</h3>
+      <p class="muted">适合每天自动刷新，速度更快，只处理最近 arXiv 新条目。</p>
+    </div>
+    <div class="actions">
+      <a class="button-link" href="/reports/today?profile={{ profile }}">查看报告</a>
+      <button
+        data-run-profile="{{ profile }}"
+        data-run-provider="{{ provider }}"
+        data-force="true"
+        data-token-required="true"
+        data-lookback-hours="36"
+        data-report-suffix=""
+      >
+        重新生成
+      </button>
+    </div>
+  </article>
+
+  <article class="window-card">
+    <div>
+      <p class="eyebrow">backfill</p>
+      <h3>近 7 天</h3>
+      <p class="muted">用于回看一周范围；会复用已分析缓存，只补齐缺失论文。</p>
+    </div>
+    <div class="actions">
+      <a class="button-link secondary" href="/reports/today?profile={{ profile }}&suffix=7d">查看 7 天报告</a>
+      <button
+        data-run-profile="{{ profile }}"
+        data-run-provider="{{ provider }}"
+        data-force="true"
+        data-token-required="true"
+        data-lookback-hours="168"
+        data-report-suffix="7d"
+      >
+        生成 7 天报告
+      </button>
+    </div>
+  </article>
 </section>
 {% endblock %}

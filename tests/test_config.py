@@ -19,7 +19,8 @@ def test_load_config_defaults_without_files(tmp_path: Path, monkeypatch) -> None
     assert profile.arxiv.request_interval_seconds == 3
     assert profile.arxiv.categories == ["cond-mat.str-el"]
     assert profile.arxiv.keywords == []
-    assert profile.arxiv.lookback_hours == 168
+    assert profile.arxiv.lookback_hours == 36
+    assert config.llm.concurrent_requests == 4
     assert config.output.min_relevance_score == 0
     assert config.output.top_n == 100
     assert config.database.path == "data/arxiv_digest.sqlite3"

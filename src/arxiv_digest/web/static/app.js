@@ -30,6 +30,10 @@ async function startRun(button) {
       profile: button.dataset.runProfile,
       provider: button.dataset.runProvider,
       force,
+      lookback_hours: button.dataset.lookbackHours
+        ? Number(button.dataset.lookbackHours)
+        : null,
+      report_suffix: button.dataset.reportSuffix || "",
     }),
   });
   const payload = await response.json();
@@ -40,7 +44,10 @@ async function startRun(button) {
   if (payload.status_url) {
     window.location.href = `/`;
   } else {
-    window.location.href = `/reports/today?profile=${button.dataset.runProfile}`;
+    const suffix = button.dataset.reportSuffix || "";
+    window.location.href = `/reports/today?profile=${button.dataset.runProfile}${
+      suffix ? `&suffix=${suffix}` : ""
+    }`;
   }
 }
 
