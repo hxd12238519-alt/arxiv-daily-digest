@@ -7,7 +7,7 @@ from typer.testing import CliRunner
 
 from arxiv_digest.cli import app
 from arxiv_digest.config import load_config
-from arxiv_digest.jobs import analyze_pending_papers
+from arxiv_digest.jobs import AnalysisProgress, analyze_pending_papers
 from arxiv_digest.llm.base import LLMProvider
 from arxiv_digest.llm.providers.mock_provider import MockProvider
 from arxiv_digest.llm.schemas import PaperAnalysis
@@ -48,6 +48,42 @@ def test_job_failure_does_not_stop_other_jobs(tmp_path: Path) -> None:
     assert len(failed_jobs) == 1
     assert "forced failure" in (failed_jobs[0].error_message or "")
     assert len(records) == 1
+
+
+def test_analysis_progress_callback_reports_each_job(tmp_path: Path) -> None:
+    config = load_config()
+    config.database.path = str(tmp_path / "digest.sqlite3")
+    config.llm.max_retries = 1
+    config.llm.request_interval_seconds = 0
+
+    storage = Storage(config.database.path)
+    storage.init_db()
+    storage.insert_paper(_paper("2401.00001", "This paper should fail"))
+    storage.insert_paper(_paper("2401.00002", "Superconductivity in a Hubbard System"))
+    provider = FailingProvider(config)
+    events: list[AnalysisProgress] = []
+
+    result = analyze_pending_papers(
+        config,
+        storage,
+        provider_instance=provider,
+        limit=2,
+        sleep_func=lambda _: None,
+        progress_callback=events.append,
+    )
+
+    assert result.failed == 1
+    assert result.succeeded == 1
+    assert [event.status for event in events] == [
+        "started",
+        "failed",
+        "succeeded",
+        "finished",
+    ]
+    assert events[0].current == 0
+    assert events[0].total == 2
+    assert events[-1].current == 2
+    assert events[-1].percent == 100.0
 
 
 class FailingProvider(LLMProvider):
@@ -96,4 +132,5 @@ def test_run_daily_profile_with_sample_feed(tmp_path: Path, monkeypatch) -> None
     )
 
     assert result.exit_code == 0, result.output
+    assert "Analysis progress [" in result.output
     assert (tmp_path / "reports" / "2026-05-23-physics_student.md").exists()

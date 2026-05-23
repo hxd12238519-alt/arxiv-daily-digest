@@ -453,6 +453,12 @@ ARXIV_DIGEST_WEB_PUBLIC_BASE_URL=https://your-domain.example
 2. 构建 `site/` 静态站。
 3. 部署到 GitHub Pages。
 
+在 GitHub Actions 的 `Run daily digest` 步骤中，每篇论文分析完成后会输出一行进度条，例如：
+
+```text
+Analysis progress [############------------] 1/2 (50.0%) profile=physics_student status=succeeded succeeded=1 failed=0 skipped=0 arxiv=2605.23001 title=...
+```
+
 首次使用需要在 GitHub 仓库设置里启用 Pages：
 
 1. 打开仓库 Settings。

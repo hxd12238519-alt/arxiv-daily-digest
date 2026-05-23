@@ -12,7 +12,7 @@ from rich.table import Table
 
 from arxiv_digest.config import AppConfig, load_config
 from arxiv_digest.fetch_arxiv import fetch_arxiv_papers, sample_arxiv_papers_for_profile
-from arxiv_digest.jobs import analyze_pending_papers
+from arxiv_digest.jobs import AnalysisProgress, analyze_pending_papers
 from arxiv_digest.llm.base import ProviderError, ProviderFactory
 from arxiv_digest.report import generate_reports
 from arxiv_digest.services import run_daily_pipeline
@@ -74,6 +74,7 @@ def analyze(
         provider_override=provider,
         model_override=model,
         limit=limit,
+        progress_callback=_print_analysis_progress,
     )
     console.print(
         "[green]Analysis finished.[/green] "
@@ -138,6 +139,7 @@ def run_daily(
         provider_override=provider,
         model_override=model,
         limit=limit,
+        progress_callback=_print_analysis_progress,
     )
     console.print(
         f"Analysis: queued={result.queued}, succeeded={result.succeeded}, "
@@ -357,6 +359,33 @@ def _fetch_papers(
         console.print("[yellow]Using built-in sample arXiv feed; no network request made.[/yellow]")
         return sample_arxiv_papers_for_profile(config, profile_name)
     return fetch_arxiv_papers(config, profile_name=profile_name)
+
+
+def _print_analysis_progress(progress: AnalysisProgress) -> None:
+    bar = _progress_bar(progress.current, progress.total)
+    base = (
+        f"Analysis progress {bar} {progress.current}/{progress.total} "
+        f"({progress.percent:.1f}%) profile={progress.profile} "
+        f"status={progress.status} succeeded={progress.succeeded} "
+        f"failed={progress.failed} skipped={progress.skipped}"
+    )
+    if progress.arxiv_id:
+        base += f" arxiv={progress.arxiv_id}"
+    if progress.title:
+        base += f" title={_shorten(progress.title, 96)}"
+    print(base, flush=True)
+
+
+def _progress_bar(current: int, total: int, width: int = 24) -> str:
+    filled = width if total <= 0 else min(width, max(0, round(width * current / total)))
+    return f"[{'#' * filled}{'-' * (width - filled)}]"
+
+
+def _shorten(value: str, limit: int) -> str:
+    normalized = " ".join(value.split())
+    if len(normalized) <= limit:
+        return normalized
+    return normalized[: limit - 3] + "..."
 
 
 def _is_writable_dir(path: Path) -> bool:
