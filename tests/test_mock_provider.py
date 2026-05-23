@@ -39,7 +39,7 @@ def test_mock_provider_classifies_superconductivity() -> None:
     provider = MockProvider(config, "mock", "mock-v1", profile_name="physics_student")
     analysis = provider.analyze_paper(_superconductivity_paper())
 
-    assert analysis.topic == "Superconductivity"
+    assert analysis.topic == "Unconventional Superconductivity"
 
 
 def _paper() -> Paper:
@@ -50,8 +50,8 @@ def _paper() -> Paper:
         abstract="This paper studies topological quantum matter and Berry curvature.",
         published=datetime(2024, 1, 1, tzinfo=UTC),
         updated=datetime(2024, 1, 1, tzinfo=UTC),
-        primary_category="cond-mat.mes-hall",
-        categories=["cond-mat.mes-hall"],
+        primary_category="cond-mat.str-el",
+        categories=["cond-mat.str-el"],
         abs_url="https://arxiv.org/abs/2401.00001",
         pdf_url="https://arxiv.org/pdf/2401.00001",
         matched_profile="physics_student",

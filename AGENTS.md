@@ -2,7 +2,7 @@
 
 ## 项目目标
 
-`arxiv-daily-digest` 每天从 arXiv 官方 API 获取物理方向新论文，基于标题、摘要、作者和分类进行去重、物理主题分类、中文解释和双语速读报告生成。默认 profile 必须是 `physics_student`，重点 profile 是 `spt_anomaly_generalized_symmetry`。正常运行默认使用 `deepseek`，API key 只允许从环境变量读取；`mock` provider 仅用于测试和离线开发。
+`arxiv-daily-digest` 每天从 arXiv 官方 API 获取物理方向新论文，基于标题、摘要、作者和分类进行去重、物理主题分类、中文解释和双语速读报告生成。默认 profile 必须是 `physics_student`，它抓取 arXiv `cond-mat.str-el` 强关联电子分类下的新论文；重点 profile 是 `spt_anomaly_generalized_symmetry`。正常运行默认使用 `deepseek`，API key 只允许从环境变量读取；`mock` provider 仅用于测试和离线开发。
 
 ## 目录结构
 

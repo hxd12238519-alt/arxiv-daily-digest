@@ -10,18 +10,17 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field
 
 PHYSICS_STUDENT_TOPICS = [
-    {"topic": "Condensed Matter Physics", "topic_zh": "凝聚态物理"},
-    {"topic": "Topological Quantum Matter", "topic_zh": "拓扑量子物态"},
-    {"topic": "Quantum Hall / Anomalous Hall", "topic_zh": "量子霍尔 / 反常霍尔"},
-    {"topic": "Superconductivity", "topic_zh": "超导物理"},
     {"topic": "Strongly Correlated Systems", "topic_zh": "强关联体系"},
+    {"topic": "Mott Physics / Hubbard Models", "topic_zh": "莫特物理 / Hubbard 模型"},
     {"topic": "Quantum Magnetism", "topic_zh": "量子磁性"},
-    {"topic": "Quantum Gases / Cold Atoms", "topic_zh": "量子气体 / 冷原子"},
-    {"topic": "Quantum Optics", "topic_zh": "量子光学"},
-    {"topic": "Statistical Mechanics", "topic_zh": "统计物理"},
-    {"topic": "Mathematical Physics", "topic_zh": "数学物理"},
-    {"topic": "Applied Physics / Materials", "topic_zh": "应用物理 / 材料"},
-    {"topic": "Other Physics", "topic_zh": "其他物理方向"},
+    {"topic": "Unconventional Superconductivity", "topic_zh": "非常规超导"},
+    {"topic": "Charge / Spin / Orbital Order", "topic_zh": "电荷 / 自旋 / 轨道有序"},
+    {"topic": "Frustrated Magnets / Spin Liquids", "topic_zh": "阻挫磁性 / 自旋液体"},
+    {"topic": "Heavy Fermions / Kondo Physics", "topic_zh": "重费米子 / 近藤物理"},
+    {"topic": "Moiré Correlated Materials", "topic_zh": "莫尔强关联材料"},
+    {"topic": "Correlated Topological Phases", "topic_zh": "强关联拓扑相"},
+    {"topic": "Numerical Many-Body Methods", "topic_zh": "多体数值方法"},
+    {"topic": "Other Strong-Correlation Physics", "topic_zh": "其他强关联物理"},
 ]
 
 SPT_ANOMALY_TOPICS = [
@@ -59,35 +58,7 @@ ML_EXCLUDED_KEYWORDS = [
     "AI agent",
 ]
 
-PHYSICS_STUDENT_KEYWORDS = [
-    "condensed matter",
-    "quantum matter",
-    "quantum phase",
-    "quantum transport",
-    "quantum Hall",
-    "anomalous Hall",
-    "topological",
-    "Berry curvature",
-    "superconductivity",
-    "superconductor",
-    "strongly correlated",
-    "spin liquid",
-    "quantum criticality",
-    "low-dimensional",
-    "two-dimensional",
-    "2D material",
-    "graphene",
-    "van der Waals",
-    "moire",
-    "moiré",
-    "cold atoms",
-    "optical lattice",
-    "quantum simulation",
-    "quantum optics",
-    "many-body",
-    "field theory",
-    "statistical mechanics",
-]
+PHYSICS_STUDENT_KEYWORDS: list[str] = []
 
 SPT_ANOMALY_KEYWORDS = [
     "symmetry protected topological",
@@ -160,17 +131,7 @@ SPT_ANOMALY_KEYWORDS = [
 ]
 
 PHYSICS_STUDENT_CATEGORIES = [
-    "cond-mat.mes-hall",
-    "cond-mat.mtrl-sci",
     "cond-mat.str-el",
-    "cond-mat.supr-con",
-    "cond-mat.stat-mech",
-    "cond-mat.quant-gas",
-    "quant-ph",
-    "physics.atom-ph",
-    "physics.optics",
-    "physics.app-ph",
-    "math-ph",
 ]
 
 SPT_ANOMALY_CATEGORIES = [
@@ -189,10 +150,10 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "default_profile": "physics_student",
     "profiles": {
         "physics_student": {
-            "display_name": "Physics Student",
-            "display_name_zh": "物理系学生通用方向",
+            "display_name": "Strongly Correlated Electrons",
+            "display_name_zh": "强关联电子方向",
             "description": (
-                "General physics literature profile for a physics student, excluding "
+                "Daily digest for all new arXiv cond-mat.str-el papers, excluding "
                 "machine learning centered papers."
             ),
             "arxiv": {
@@ -203,7 +164,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
                 "max_results_per_day": 100,
                 "page_size": 50,
                 "request_interval_seconds": 3,
-                "lookback_hours": 24,
+                "lookback_hours": 168,
                 "timezone": "Asia/Tokyo",
             },
             "topics": PHYSICS_STUDENT_TOPICS,
@@ -224,7 +185,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
                 "max_results_per_day": 100,
                 "page_size": 50,
                 "request_interval_seconds": 3,
-                "lookback_hours": 24,
+                "lookback_hours": 168,
                 "timezone": "Asia/Tokyo",
             },
             "topics": SPT_ANOMALY_TOPICS,
@@ -275,8 +236,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "output": {
         "report_dir": "reports",
         "formats": ["markdown", "html", "json"],
-        "min_relevance_score": 60,
-        "top_n": 50,
+        "min_relevance_score": 0,
+        "top_n": 100,
     },
     "database": {
         "path": "data/arxiv_digest.sqlite3",
@@ -405,8 +366,8 @@ class OutputConfig(BaseModel):
 
     report_dir: str = "reports"
     formats: list[str] = Field(default_factory=lambda: ["markdown", "html", "json"])
-    min_relevance_score: int = 60
-    top_n: int = 50
+    min_relevance_score: int = 0
+    top_n: int = 100
 
 
 class DatabaseConfig(BaseModel):

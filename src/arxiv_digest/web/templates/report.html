@@ -6,7 +6,7 @@
   <div class="stats">
     <span>Total: {{ total_papers }}</span>
     <span>Analyzed: {{ analyzed_papers }}</span>
-    <span>Recommended: {{ recommended_papers }}</span>
+    <span>Window: {{ window_start }} - {{ window_end }}</span>
   </div>
 </section>
 
@@ -25,7 +25,7 @@
 </section>
 
 <section>
-  <h2>高优先级推荐</h2>
+  <h2>论文分析与总结</h2>
   {% for paper in papers %}
     <article class="card {% if paper.relevance_score >= 80 %}high{% endif %}">
       <h3>{{ paper.title_en }}</h3>
@@ -61,7 +61,7 @@
       <p>{{ paper.why_relevant_zh }}</p>
     </article>
   {% else %}
-    <p class="muted">暂无达到推荐阈值的论文。</p>
+    <p class="muted">暂无已完成分析的论文。</p>
   {% endfor %}
 </section>
 {% endblock %}

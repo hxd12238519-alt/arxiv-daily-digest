@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from datetime import date, datetime
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -79,14 +79,19 @@ def build_report_data(
     profile_name: str | None = None,
 ) -> dict[str, Any]:
     resolved_profile_name, profile = config.get_profile(profile_name)
-    all_papers = storage.list_papers_by_date(
+    window_start, window_end = _report_window(
         target_date,
-        profile.arxiv.timezone,
+        timezone_name=profile.arxiv.timezone,
+        lookback_hours=profile.arxiv.lookback_hours,
+    )
+    all_papers = storage.list_papers_by_window(
+        window_start,
+        window_end,
         profile=resolved_profile_name,
     )
-    records = storage.list_report_records_for_date(
-        target_date,
-        profile.arxiv.timezone,
+    records = storage.list_report_records_for_window(
+        window_start,
+        window_end,
         resolved_profile_name,
     )
     paper_items = [_record_to_item(record, profile.arxiv.timezone) for record in records]
@@ -107,6 +112,8 @@ def build_report_data(
     return {
         "date": target_date.isoformat(),
         "timezone": profile.arxiv.timezone,
+        "window_start": _format_datetime(window_start.astimezone(ZoneInfo(profile.arxiv.timezone))),
+        "window_end": _format_datetime(window_end.astimezone(ZoneInfo(profile.arxiv.timezone))),
         "profile": resolved_profile_name,
         "profile_display_name": profile.display_name,
         "profile_display_name_zh": profile.display_name_zh,
@@ -202,6 +209,18 @@ def _format_datetime(value: datetime) -> str:
     return value.strftime("%Y-%m-%d %H:%M %Z")
 
 
+def _report_window(
+    target_date: date,
+    *,
+    timezone_name: str,
+    lookback_hours: int,
+) -> tuple[datetime, datetime]:
+    local_tz = ZoneInfo(timezone_name)
+    end_local = datetime.combine(target_date + timedelta(days=1), time.min, tzinfo=local_tz)
+    start_local = end_local - timedelta(hours=max(1, lookback_hours))
+    return start_local.astimezone(UTC), end_local.astimezone(UTC)
+
+
 def _environment(*, autoescape: bool) -> Environment:
     return Environment(
         autoescape=select_autoescape(default=autoescape),
@@ -214,7 +233,8 @@ MARKDOWN_TEMPLATE = """
 # arXiv Physics Digest - {{ date }}
 
 方向：{{ profile_display_name }} / {{ profile_display_name_zh }}
-今日共抓取 {{ total_papers }} 篇相关论文，其中推荐阅读 {{ recommended_papers }} 篇。
+今日共抓取 {{ total_papers }} 篇相关论文，其中完成分析 {{ analyzed_papers }} 篇。
+统计窗口：{{ window_start }} 至 {{ window_end }}。
 
 ## 今日主题分布
 
@@ -226,7 +246,7 @@ MARKDOWN_TEMPLATE = """
 | - | - | 0 |
 {% endfor %}
 
-## 高优先级推荐
+## 论文分析与总结
 
 {% for paper in papers %}
 ### {{ loop.index }}. {{ paper.title_en }}
@@ -278,7 +298,7 @@ MARKDOWN_TEMPLATE = """
 
 {{ paper.main_results_en }}
 {% else %}
-暂无达到推荐阈值的论文。
+暂无已完成分析的论文。
 {% endfor %}
 """
 
@@ -356,8 +376,9 @@ HTML_TEMPLATE = """
     <div class="meta">
       <span>{{ profile_display_name }} / {{ profile_display_name_zh }}</span>
       <span>Total: {{ total_papers }}</span>
-      <span>Recommended: {{ recommended_papers }}</span>
+      <span>Analyzed: {{ analyzed_papers }}</span>
       <span>Timezone: {{ timezone }}</span>
+      <span>Window: {{ window_start }} - {{ window_end }}</span>
     </div>
   </header>
   <main>
@@ -373,7 +394,7 @@ HTML_TEMPLATE = """
       </tbody>
     </table>
 
-    <h2>高优先级推荐</h2>
+    <h2>论文分析与总结</h2>
     {% for paper in papers %}
       <article class="card {% if paper.relevance_score >= 80 %}high{% endif %}">
         <h3>{{ paper.title_en }}</h3>
@@ -411,7 +432,7 @@ HTML_TEMPLATE = """
         <p>{{ paper.main_results_en }}</p>
       </article>
     {% else %}
-      <p>暂无达到推荐阈值的论文。</p>
+      <p>暂无已完成分析的论文。</p>
     {% endfor %}
   </main>
 </body>

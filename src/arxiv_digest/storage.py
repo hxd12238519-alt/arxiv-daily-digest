@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -258,6 +258,19 @@ class Storage:
             and (profile is None or paper.matched_profile == profile)
         ]
 
+    def list_papers_by_window(
+        self,
+        start: datetime,
+        end: datetime,
+        profile: str | None = None,
+    ) -> list[Paper]:
+        return [
+            paper
+            for paper in self.list_papers()
+            if start <= paper.published < end
+            and (profile is None or paper.matched_profile == profile)
+        ]
+
     def list_unanalyzed_papers(
         self,
         provider: str,
@@ -479,6 +492,62 @@ class Storage:
         for row in rows:
             paper = _paper_from_prefixed_row(row)
             if date_in_timezone(paper.published, timezone_name) != target_date:
+                continue
+            records.append(
+                {
+                    "paper": paper,
+                    "analysis": _analysis_from_row(row),
+                    "provider": row["provider"],
+                    "model": row["model"],
+                    "analysis_id": row["analysis_id"],
+                    "profile": row["profile"],
+                }
+            )
+        return records
+
+    def list_report_records_for_window(
+        self,
+        start: datetime,
+        end: datetime,
+        profile: str,
+    ) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                  p.id AS paper_id, p.arxiv_id, p.title, p.authors_json, p.abstract,
+                  p.published, p.updated, p.primary_category, p.categories_json,
+                  p.abs_url, p.pdf_url, p.matched_profile, p.keyword_hits_json,
+                  p.raw_entry_json,
+                  a.id AS analysis_id, a.profile, a.provider, a.model, a.topic,
+                  a.topic_zh, a.title_zh, a.abstract_zh, a.method_type,
+                  a.physical_system_en, a.physical_system_zh, a.physics_problem_en,
+                  a.physics_problem_zh, a.key_concepts_en_json,
+                  a.key_concepts_zh_json, a.main_results_en, a.main_results_zh,
+                  a.method_en, a.method_zh, a.experiments_en, a.experiments_zh,
+                  a.limitations_en, a.limitations_zh, a.why_relevant_en,
+                  a.why_relevant_zh, a.suggested_reading_priority,
+                  a.keywords_en_json, a.keywords_zh_json, a.relevance_score,
+                  a.recommended_reason_zh, a.raw_response_json,
+                  a.created_at AS analysis_created_at
+                FROM paper_analyses a
+                JOIN papers p ON p.id = a.paper_id
+                WHERE a.profile = ?
+                  AND a.schema_version = ?
+                  AND a.id IN (
+                    SELECT MAX(id)
+                    FROM paper_analyses
+                    WHERE profile = ? AND schema_version = ?
+                    GROUP BY paper_id
+                  )
+                ORDER BY a.relevance_score DESC, p.published DESC
+                """,
+                (profile, SCHEMA_VERSION, profile, SCHEMA_VERSION),
+            ).fetchall()
+        records = []
+        for row in rows:
+            paper = _paper_from_prefixed_row(row)
+            if not (start <= paper.published < end):
                 continue
             records.append(
                 {

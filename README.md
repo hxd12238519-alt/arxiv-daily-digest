@@ -2,15 +2,17 @@
 
 面向物理系学生的本地 arXiv 物理文献日报工具。项目每天从 arXiv 官方 API 抓取物理方向新论文，默认排除以机器学习、人工智能、LLM、RAG、Agent 为中心的论文，根据物理主题分类，并用 DeepSeek 等真实 LLM 生成中英文双语“物理文献速读”报告。
 
-默认 profile 是 `physics_student`，重点方向 profile 是 `spt_anomaly_generalized_symmetry`。
+默认 profile 是 `physics_student`，当前定义为 arXiv `cond-mat.str-el` 强关联电子方向；另一个重点方向 profile 是 `spt_anomaly_generalized_symmetry`。
 
 ## 功能
 
 - 每天抓取 arXiv 物理方向论文。
+- `physics_student` 抓取 arXiv `cond-mat.str-el` 强关联电子分类下 7 天窗口内的新论文，不再用关键词二次过滤。
 - 默认不检索 AI/ML/LLM 论文。
 - 通过 `excluded_categories` 和 `excluded_keywords` 排除机器学习中心论文。
-- 按凝聚态、拓扑量子物态、量子霍尔、超导、强关联、冷原子、量子光学等主题分类。
+- 按强关联体系、莫特物理、Hubbard 模型、量子磁性、非常规超导、重费米子、莫尔强关联材料等主题分类。
 - 生成 Markdown、HTML、JSON 三种报告。
+- 报告展示抓取窗口内所有已分析论文，而不是只展示高分推荐论文。
 - 提供 CLI 和本地 Web App 两种入口。
 - 默认使用 `deepseek` provider；API key 只从环境变量读取。
 - `MockProvider` 仅用于测试和离线开发，不作为正常日报生成路径。
@@ -137,7 +139,7 @@ site/reports/YYYY-MM-DD-physics_student.html
 https://<你的GitHub用户名>.github.io/arxiv-daily-digest/
 ```
 
-最新物理通用日报：
+最新强关联电子日报：
 
 ```text
 https://<你的GitHub用户名>.github.io/arxiv-daily-digest/latest/physics_student.html
@@ -193,7 +195,7 @@ Authorization: Bearer <WEB_ADMIN_TOKEN>
 
 ## CLI 用法
 
-物理通用方向：
+强关联电子方向：
 
 ```bash
 export DEEPSEEK_API_KEY="..."
@@ -263,14 +265,9 @@ profiles:
   physics_student:
     arxiv:
       categories:
-        - cond-mat.mes-hall
-        - cond-mat.mtrl-sci
         - cond-mat.str-el
-        - quant-ph
-      keywords:
-        - condensed matter
-        - quantum Hall
-        - topological
+      keywords: []
+      lookback_hours: 168
       excluded_categories:
         - cs.AI
         - cs.LG
@@ -301,7 +298,7 @@ profiles:
         - cobordism
 ```
 
-`categories` 和 `keywords` 是正向检索条件；`excluded_categories` 和 `excluded_keywords` 用于排除机器学习中心论文。代码会优先在 arXiv query 中使用 `ANDNOT`，如果复杂 query 失败，会回退到正向检索后本地 post-filter。
+`categories` 和 `keywords` 是正向检索条件；`excluded_categories` 和 `excluded_keywords` 用于排除机器学习中心论文。`physics_student` 的 `keywords: []` 表示抓取 `cond-mat.str-el` 分类下所有新文章。代码会优先在 arXiv query 中使用 `ANDNOT`，如果复杂 query 失败，会回退到正向检索后本地 post-filter。
 
 ## 彻底排除机器学习论文
 

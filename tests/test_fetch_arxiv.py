@@ -57,14 +57,15 @@ def test_build_search_query_includes_categories_keywords_and_utc_window() -> Non
     query = build_search_query(config, now=now)
 
     positive_part = query.split("ANDNOT")[0]
-    assert "cat:cond-mat.mes-hall" in positive_part
+    assert "cat:cond-mat.str-el" in positive_part
+    assert "cat:cond-mat.mes-hall" not in positive_part
     assert "cat:cs.AI" not in positive_part
     assert "cat:cs.LG" not in positive_part
     assert "cat:stat.ML" not in positive_part
-    assert 'all:"quantum transport"' in query
+    assert 'all:"quantum transport"' not in positive_part
     assert 'all:"machine learning"' in query
     assert "all:LLM" in query
-    assert "submittedDate:[202401011230 TO 202401021230]" in query
+    assert "submittedDate:[202312261230 TO 202401021230]" in query
 
 
 def test_spt_profile_query_contains_anomaly_and_symmetry_terms() -> None:

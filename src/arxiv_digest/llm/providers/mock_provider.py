@@ -9,31 +9,50 @@ from arxiv_digest.models import Paper
 
 PHYSICS_RULES = [
     (
-        "Quantum Hall / Anomalous Hall",
-        "量子霍尔 / 反常霍尔",
-        ["quantum hall", "anomalous hall", "hall conductance"],
+        "Mott Physics / Hubbard Models",
+        "莫特物理 / Hubbard 模型",
+        ["hubbard", "mott", "t-j model", "tJ model"],
     ),
     (
-        "Topological Quantum Matter",
-        "拓扑量子物态",
-        ["topological", "chern", "berry", "edge state", "surface state"],
+        "Unconventional Superconductivity",
+        "非常规超导",
+        ["superconduct", "pairing", "cooper", "cuprate", "pair-density wave"],
     ),
-    ("Superconductivity", "超导物理", ["superconduct", "pairing", "cooper"]),
     (
         "Strongly Correlated Systems",
         "强关联体系",
-        ["strongly correlated", "hubbard", "mott", "spin liquid"],
+        ["strongly correlated", "correlation", "many-body", "electron-electron"],
     ),
     (
-        "Quantum Gases / Cold Atoms",
-        "量子气体 / 冷原子",
-        ["cold atom", "optical lattice", "bose", "fermi gas"],
+        "Quantum Magnetism",
+        "量子磁性",
+        ["magnet", "magnon", "antiferromagnet", "ferromagnet", "spin"],
     ),
-    ("Quantum Optics", "量子光学", ["optics", "photon", "cavity", "laser"]),
     (
-        "Statistical Mechanics",
-        "统计物理",
-        ["statistical mechanics", "phase transition", "renormalization"],
+        "Charge / Spin / Orbital Order",
+        "电荷 / 自旋 / 轨道有序",
+        ["charge order", "spin order", "orbital order", "density wave", "stripe"],
+    ),
+    (
+        "Frustrated Magnets / Spin Liquids",
+        "阻挫磁性 / 自旋液体",
+        ["frustrated", "spin liquid", "kitaev"],
+    ),
+    ("Heavy Fermions / Kondo Physics", "重费米子 / 近藤物理", ["heavy fermion", "kondo"]),
+    (
+        "Moiré Correlated Materials",
+        "莫尔强关联材料",
+        ["moire", "moiré", "twisted bilayer", "magic angle"],
+    ),
+    (
+        "Correlated Topological Phases",
+        "强关联拓扑相",
+        ["topological", "chern", "berry", "edge state", "surface state"],
+    ),
+    (
+        "Numerical Many-Body Methods",
+        "多体数值方法",
+        ["dmrg", "monte carlo", "exact diagonalization", "tensor network"],
     ),
 ]
 

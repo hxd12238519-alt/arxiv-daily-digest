@@ -53,16 +53,16 @@ def test_generate_markdown_html_and_json_reports(tmp_path: Path) -> None:
 def _paper() -> Paper:
     return Paper(
         arxiv_id="2401.00001",
-        title="Quantum Hall Transport in a Topological Material",
+        title="Superconductivity and Cooper Pairing in a Strongly Correlated System",
         authors=["Alice"],
-        abstract="We study quantum Hall transport and Berry curvature.",
+        abstract="We study superconductivity and pairing in a correlated Hubbard system.",
         published=datetime(2024, 1, 1, 1, 0, tzinfo=UTC),
         updated=datetime(2024, 1, 1, 1, 0, tzinfo=UTC),
-        primary_category="cond-mat.mes-hall",
-        categories=["cond-mat.mes-hall"],
+        primary_category="cond-mat.str-el",
+        categories=["cond-mat.str-el"],
         abs_url="https://arxiv.org/abs/2401.00001",
         pdf_url="https://arxiv.org/pdf/2401.00001",
         matched_profile="physics_student",
-        keyword_hits=["quantum Hall"],
+        keyword_hits=[],
         raw_entry_json={},
     )
