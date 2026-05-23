@@ -445,14 +445,13 @@ ARXIV_DIGEST_WEB_PUBLIC_BASE_URL=https://your-domain.example
 
 ## GitHub Actions
 
-工作流在 `.github/workflows/daily.yml`，每天日本时间 09:00 运行。默认使用 `deepseek`，需要在 GitHub Secrets 设置 `DEEPSEEK_API_KEY`。
+工作流在 `.github/workflows/daily.yml`，每天日本时间 09:00 运行。默认使用 `deepseek`，需要在 GitHub Secrets 设置 `DEEPSEEK_API_KEY`。默认会生成 `physics_student` 和 `spt_anomaly_generalized_symmetry` 两个页面。
 
 工作流会：
 
 1. 运行每日抓取、分析和报告生成。
-2. 提交 `reports/` 和 `data/`。
-3. 构建 `site/` 静态站。
-4. 部署到 GitHub Pages。
+2. 构建 `site/` 静态站。
+3. 部署到 GitHub Pages。
 
 首次使用需要在 GitHub 仓库设置里启用 Pages：
 
