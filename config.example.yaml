@@ -1,0 +1,262 @@
+default_profile: physics_student
+
+profiles:
+  physics_student:
+    display_name: "Physics Student"
+    display_name_zh: "物理系学生通用方向"
+    description: "General physics literature profile for a physics student, excluding machine learning centered papers."
+    arxiv:
+      categories:
+        - cond-mat.mes-hall
+        - cond-mat.mtrl-sci
+        - cond-mat.str-el
+        - cond-mat.supr-con
+        - cond-mat.stat-mech
+        - cond-mat.quant-gas
+        - quant-ph
+        - physics.atom-ph
+        - physics.optics
+        - physics.app-ph
+        - math-ph
+      keywords:
+        - condensed matter
+        - quantum matter
+        - quantum phase
+        - quantum transport
+        - quantum Hall
+        - anomalous Hall
+        - topological
+        - Berry curvature
+        - superconductivity
+        - superconductor
+        - strongly correlated
+        - spin liquid
+        - quantum criticality
+        - low-dimensional
+        - two-dimensional
+        - 2D material
+        - graphene
+        - van der Waals
+        - moire
+        - moiré
+        - cold atoms
+        - optical lattice
+        - quantum simulation
+        - quantum optics
+        - many-body
+        - field theory
+        - statistical mechanics
+      excluded_categories:
+        - cs.AI
+        - cs.LG
+        - cs.CL
+        - cs.CV
+        - stat.ML
+      excluded_keywords:
+        - machine learning
+        - deep learning
+        - neural network
+        - large language model
+        - LLM
+        - generative AI
+        - diffusion model
+        - transformer
+        - foundation model
+        - RAG
+        - retrieval augmented generation
+        - AI agent
+      max_results_per_day: 100
+      page_size: 50
+      request_interval_seconds: 3
+      lookback_hours: 24
+      timezone: Asia/Tokyo
+    topics:
+      - topic: "Condensed Matter Physics"
+        topic_zh: "凝聚态物理"
+      - topic: "Topological Quantum Matter"
+        topic_zh: "拓扑量子物态"
+      - topic: "Quantum Hall / Anomalous Hall"
+        topic_zh: "量子霍尔 / 反常霍尔"
+      - topic: "Superconductivity"
+        topic_zh: "超导物理"
+      - topic: "Strongly Correlated Systems"
+        topic_zh: "强关联体系"
+      - topic: "Quantum Magnetism"
+        topic_zh: "量子磁性"
+      - topic: "Quantum Gases / Cold Atoms"
+        topic_zh: "量子气体 / 冷原子"
+      - topic: "Quantum Optics"
+        topic_zh: "量子光学"
+      - topic: "Statistical Mechanics"
+        topic_zh: "统计物理"
+      - topic: "Mathematical Physics"
+        topic_zh: "数学物理"
+      - topic: "Applied Physics / Materials"
+        topic_zh: "应用物理 / 材料"
+      - topic: "Other Physics"
+        topic_zh: "其他物理方向"
+
+  condensed_matter_topology_qah:
+    display_name: "Condensed Matter / Topology / Quantum Anomalous Hall"
+    display_name_zh: "凝聚态 / 拓扑物态 / 量子反常霍尔"
+    description: "Focused profile for condensed matter, topological phases, quantum anomalous Hall effect, Chern insulators, and quantum materials."
+    arxiv:
+      categories:
+        - cond-mat.mes-hall
+        - cond-mat.mtrl-sci
+        - cond-mat.str-el
+        - cond-mat.supr-con
+        - cond-mat.stat-mech
+        - cond-mat.quant-gas
+        - quant-ph
+        - physics.app-ph
+        - math-ph
+      keywords:
+        - quantum anomalous Hall
+        - QAH
+        - QAHE
+        - anomalous Hall
+        - quantum Hall
+        - Chern insulator
+        - Chern number
+        - Chern band
+        - fractional Chern insulator
+        - fractional quantum Hall
+        - topological insulator
+        - magnetic topological insulator
+        - axion insulator
+        - topological superconductor
+        - topological superconductivity
+        - Majorana
+        - Weyl semimetal
+        - Dirac semimetal
+        - topological semimetal
+        - Berry curvature
+        - Berry phase
+        - spin orbit coupling
+        - spin-orbit coupling
+        - chiral edge state
+        - edge state
+        - surface state
+        - topological phase
+        - topological order
+        - topological invariant
+        - Haldane model
+        - Kane-Mele
+        - moire
+        - moiré
+        - twisted bilayer
+        - magic angle
+        - graphene
+        - van der Waals
+        - MnBi2Te4
+        - magnetic doping
+        - quantum transport
+        - Hall conductance
+        - anomalous Hall conductivity
+      excluded_categories:
+        - cs.AI
+        - cs.LG
+        - cs.CL
+        - cs.CV
+        - stat.ML
+      excluded_keywords:
+        - machine learning
+        - deep learning
+        - neural network
+        - large language model
+        - LLM
+        - generative AI
+        - diffusion model
+        - transformer
+        - foundation model
+        - RAG
+        - AI agent
+      max_results_per_day: 100
+      page_size: 50
+      request_interval_seconds: 3
+      lookback_hours: 24
+      timezone: Asia/Tokyo
+    topics:
+      - topic: "Quantum Anomalous Hall / QAHE"
+        topic_zh: "量子反常霍尔 / QAHE"
+      - topic: "Chern Insulators"
+        topic_zh: "陈绝缘体"
+      - topic: "Topological Insulators"
+        topic_zh: "拓扑绝缘体"
+      - topic: "Topological Semimetals"
+        topic_zh: "拓扑半金属"
+      - topic: "Topological Superconductivity"
+        topic_zh: "拓扑超导"
+      - topic: "Magnetic Topological Materials"
+        topic_zh: "磁性拓扑材料"
+      - topic: "Moiré / Twistronics"
+        topic_zh: "莫尔材料 / 扭转电子学"
+      - topic: "Quantum Hall / Fractional Chern Phases"
+        topic_zh: "量子霍尔 / 分数量子陈相"
+      - topic: "Strongly Correlated Topological Phases"
+        topic_zh: "强关联拓扑相"
+      - topic: "Topological Quantum Matter Theory"
+        topic_zh: "拓扑量子物态理论"
+      - topic: "Materials Synthesis / Experiment"
+        topic_zh: "材料制备 / 实验"
+      - topic: "Other Condensed Matter"
+        topic_zh: "其他凝聚态方向"
+
+llm:
+  provider: mock
+  model: mock-v1
+  temperature: 0.2
+  timeout_seconds: 60
+  max_retries: 3
+  request_interval_seconds: 1
+  mode: abstract_only
+
+providers:
+  custom_http:
+    endpoint: ""
+    api_key_env: CUSTOM_LLM_API_KEY
+    model: ""
+  litellm:
+    api_key_env: LITELLM_API_KEY
+    model: ""
+    base_url: ""
+  gemini:
+    api_key_env: GEMINI_API_KEY
+    model: ""
+  claude:
+    api_key_env: ANTHROPIC_API_KEY
+    model: ""
+  deepseek:
+    api_key_env: DEEPSEEK_API_KEY
+    model: ""
+    base_url: "https://api.deepseek.com"
+  qwen:
+    api_key_env: DASHSCOPE_API_KEY
+    model: ""
+  ollama:
+    base_url: "http://localhost:11434"
+    model: "qwen2.5:7b"
+
+output:
+  report_dir: reports
+  formats:
+    - markdown
+    - html
+    - json
+  min_relevance_score: 60
+  top_n: 50
+
+database:
+  path: data/arxiv_digest.sqlite3
+
+web:
+  host: "127.0.0.1"
+  port: 8000
+  auto_run_on_open: true
+  enable_scheduler: true
+  daily_run_time: "09:00"
+  require_admin_token_for_force: true
+  require_admin_token_for_run: true
+  allow_public_auto_run: false
+  public_base_url: ""

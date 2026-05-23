@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title or "arXiv Physics Digest" }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <h1>arXiv Physics Digest</h1>
+      <p>物理文献速读 · 本地 Web App</p>
+    </div>
+    <nav>
+      <a href="/">首页</a>
+      <a href="/reports/today">今日报告</a>
+    </nav>
+  </header>
+  <main class="page">
+    {% block content %}{% endblock %}
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

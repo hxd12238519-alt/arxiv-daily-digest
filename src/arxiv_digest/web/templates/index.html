@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>今日状态</h2>
+  <dl class="kv">
+    <dt>Profile</dt><dd>{{ profile }} / {{ profile_display_name_zh }}</dd>
+    <dt>Provider</dt><dd>{{ provider }}</dd>
+    <dt>日期</dt><dd>{{ today }}</dd>
+    <dt>今日报告</dt><dd>{{ "已生成" if report_ready else "不存在" }}</dd>
+    <dt>访问模式</dt><dd>{{ "公开只读" if public_mode else "本地" }}</dd>
+    <dt>生成权限</dt><dd>{{ "需要 WEB_ADMIN_TOKEN" if run_requires_token else "本机可直接运行" }}</dd>
+    <dt>WEB_ADMIN_TOKEN</dt><dd>{{ admin_token_status }}</dd>
+    {% if public_base_url %}
+      <dt>分享链接</dt><dd><a href="{{ public_base_url }}">{{ public_base_url }}</a></dd>
+    {% endif %}
+  </dl>
+  {% if public_mode and run_requires_token and not report_ready %}
+    <p class="notice">当前是公开分享模式。访问者可以查看已生成报告，但生成新报告需要管理员 token，避免重复消耗真实 LLM API。</p>
+  {% endif %}
+  <div class="actions">
+    <button
+      data-run-profile="{{ profile }}"
+      data-run-provider="{{ provider }}"
+      data-force="false"
+      data-token-required="{{ 'true' if run_requires_token else 'false' }}"
+    >
+      开始抓取
+    </button>
+    <button
+      data-run-profile="{{ profile }}"
+      data-run-provider="{{ provider }}"
+      data-force="true"
+      data-token-required="true"
+    >
+      强制刷新
+    </button>
+    <a class="button-link" href="/reports/today?profile={{ profile }}">最新报告入口</a>
+  </div>
+</section>
+{% endblock %}

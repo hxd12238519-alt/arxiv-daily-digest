@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arxiv-daily-digest"
+version = "0.1.0"
+description = "Daily bilingual arXiv digest with provider-agnostic LLM analysis."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "arxiv-daily-digest contributors" }
+]
+keywords = ["arxiv", "digest", "llm", "research", "automation"]
+dependencies = [
+  "apscheduler>=3.10.4",
+  "fastapi>=0.115.0",
+  "feedparser>=6.0.11",
+  "httpx>=0.27.0",
+  "jinja2>=3.1.4",
+  "pydantic>=2.7.0",
+  "python-multipart>=0.0.9",
+  "python-dotenv>=1.0.1",
+  "pyyaml>=6.0.1",
+  "rich>=13.7.1,<14",
+  "tenacity>=8.2.3",
+  "typer>=0.12.3",
+  "uvicorn[standard]>=0.30.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2.0,<9",
+  "ruff>=0.5.0",
+]
+
+[project.scripts]
+arxiv-digest = "arxiv_digest.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["B008"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

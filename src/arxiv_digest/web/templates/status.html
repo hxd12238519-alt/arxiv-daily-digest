@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel" data-run-id="{{ run.id }}">
+  <h2>正在抓取 arXiv 并生成今日物理文献日报</h2>
+  <dl class="kv">
+    <dt>Run ID</dt><dd>{{ run.id }}</dd>
+    <dt>Profile</dt><dd>{{ run.profile }} / {{ profile_display_name_zh }}</dd>
+    <dt>Provider</dt><dd>{{ run.provider }}</dd>
+    <dt>Status</dt><dd id="run-status">{{ run.status.value }}</dd>
+    <dt>Message</dt><dd id="run-message">{{ run.status_message or "Queued." }}</dd>
+  </dl>
+  <p class="muted">页面每 3 秒自动检查任务状态。完成后会跳转到今日报告。</p>
+</section>
+{% endblock %}

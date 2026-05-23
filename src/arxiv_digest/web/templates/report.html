@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>arXiv Physics Digest - {{ date }}</h2>
+  <p class="muted">{{ profile_display_name }} / {{ profile_display_name_zh }}</p>
+  <div class="stats">
+    <span>Total: {{ total_papers }}</span>
+    <span>Analyzed: {{ analyzed_papers }}</span>
+    <span>Recommended: {{ recommended_papers }}</span>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>今日主题分布</h2>
+  <table>
+    <thead><tr><th>主题</th><th>中文主题</th><th>数量</th></tr></thead>
+    <tbody>
+    {% for topic in topics %}
+      <tr><td>{{ topic.topic }}</td><td>{{ topic.topic_zh }}</td><td>{{ topic.count }}</td></tr>
+    {% else %}
+      <tr><td>-</td><td>-</td><td>0</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>高优先级推荐</h2>
+  {% for paper in papers %}
+    <article class="card {% if paper.relevance_score >= 80 %}high{% endif %}">
+      <h3>{{ paper.title_en }}</h3>
+      <p><strong>{{ paper.title_zh }}</strong></p>
+      <p class="badges">
+        <span>{{ paper.topic_zh }}</span>
+        <span>{{ paper.method_type }}</span>
+        <span>{{ paper.suggested_reading_priority }}</span>
+        <span>Score {{ paper.relevance_score }}</span>
+      </p>
+      <div class="grid">
+        <div><strong>作者</strong><br>{{ paper.authors_text }}</div>
+        <div><strong>arXiv 分类</strong><br>{{ paper.categories_text }}</div>
+        <div><strong>命中关键词</strong><br>{{ paper.keyword_hits_text }}</div>
+        <div><strong>链接</strong><br>
+          <a href="{{ paper.abs_url }}">arXiv</a>
+          {% if paper.pdf_url %} / <a href="{{ paper.pdf_url }}">PDF</a>{% endif %}
+        </div>
+      </div>
+      <h4>研究问题</h4>
+      <p>{{ paper.physics_problem_zh }}</p>
+      <h4>物理体系 / 材料体系 / 模型</h4>
+      <p>{{ paper.physical_system_zh }}</p>
+      <h4>关键物理概念</h4>
+      <ul>{% for item in paper.key_concepts_zh %}<li>{{ item }}</li>{% endfor %}</ul>
+      <h4>方法类型</h4>
+      <p>{{ paper.method_type }} · {{ paper.method_zh }}</p>
+      <h4>主要结果</h4>
+      <p>{{ paper.main_results_zh }}</p>
+      <h4>实验或计算内容</h4>
+      <p>{{ paper.experiments_or_calculations_zh }}</p>
+      <h4>为什么值得读</h4>
+      <p>{{ paper.why_relevant_zh }}</p>
+    </article>
+  {% else %}
+    <p class="muted">暂无达到推荐阈值的论文。</p>
+  {% endfor %}
+</section>
+{% endblock %}
