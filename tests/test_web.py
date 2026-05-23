@@ -141,9 +141,10 @@ def test_web_report_page_contains_physics_sections(tmp_path: Path, monkeypatch) 
     data = json.loads(paths["json"].read_text(encoding="utf-8"))
     html = _render_report_template(data)
 
-    assert "研究问题" in html
-    assert "物理体系" in html
-    assert "关键物理概念" in html
+    assert "摘要中文对应" in html
+    assert "English abstract" in html
+    assert "中文摘要" in html
+    assert "研究问题" not in html
 
 
 def test_live_smoke_refuses_without_allow_env(monkeypatch) -> None:

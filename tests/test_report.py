@@ -16,13 +16,27 @@ def test_generate_markdown_html_and_json_reports(tmp_path: Path) -> None:
     config.database.path = str(tmp_path / "digest.sqlite3")
     config.output.report_dir = str(tmp_path / "reports")
     config.output.min_relevance_score = 0
+    config.output.top_n = 1
 
     storage = Storage(config.database.path)
     storage.init_db()
+    provider = MockProvider(config, "mock", "mock-v1")
     paper = _paper()
-    paper_id, _ = storage.insert_paper(paper)
-    analysis = MockProvider(config, "mock", "mock-v1").analyze_paper(paper)
-    storage.save_analysis(paper_id, "physics_student", "mock", "mock-v1", analysis)
+    later_paper = _paper(
+        arxiv_id="2401.00002",
+        title="Mott Physics in a Correlated Lattice Model",
+        published=datetime(2024, 1, 1, 2, 0, tzinfo=UTC),
+    )
+    for item in [paper, later_paper]:
+        paper_id, _ = storage.insert_paper(item)
+        storage.save_analysis(
+            paper_id,
+            "physics_student",
+            "mock",
+            "mock-v1",
+            provider.analyze_paper(item),
+        )
+    analysis = provider.analyze_paper(paper)
 
     generated = generate_reports(
         storage,
@@ -39,29 +53,41 @@ def test_generate_markdown_html_and_json_reports(tmp_path: Path) -> None:
 
     assert paper.title in markdown
     assert analysis.title_zh in markdown
-    assert "研究问题" in markdown
-    assert "物理体系" in markdown
-    assert "关键物理概念" in markdown
-    assert "主要结果" in markdown
+    assert "摘要中文对应" in markdown
+    assert "英文摘要" in markdown
+    assert "中文摘要" in markdown
+    assert "研究问题" not in markdown
     assert "physics_student" in generated["markdown"].name
     assert paper.title in html
     assert analysis.title_zh in html
-    assert payload["papers"][0]["title_en"] == paper.title
-    assert payload["papers"][0]["title_zh"] == analysis.title_zh
+    assert "摘要中文对应" in html
+    assert "English abstract" in html
+    assert "中文摘要" in html
+    assert "研究问题" not in html
+    assert payload["report_mode"] == "abstract_translation"
+    assert len(payload["papers"]) == 2
+    papers_by_title = {item["title_en"]: item for item in payload["papers"]}
+    assert papers_by_title[paper.title]["title_zh"] == analysis.title_zh
+    assert later_paper.title in papers_by_title
 
 
-def _paper() -> Paper:
+def _paper(
+    *,
+    arxiv_id: str = "2401.00001",
+    title: str = "Superconductivity and Cooper Pairing in a Strongly Correlated System",
+    published: datetime = datetime(2024, 1, 1, 1, 0, tzinfo=UTC),
+) -> Paper:
     return Paper(
-        arxiv_id="2401.00001",
-        title="Superconductivity and Cooper Pairing in a Strongly Correlated System",
+        arxiv_id=arxiv_id,
+        title=title,
         authors=["Alice"],
         abstract="We study superconductivity and pairing in a correlated Hubbard system.",
-        published=datetime(2024, 1, 1, 1, 0, tzinfo=UTC),
-        updated=datetime(2024, 1, 1, 1, 0, tzinfo=UTC),
+        published=published,
+        updated=published,
         primary_category="cond-mat.str-el",
         categories=["cond-mat.str-el"],
-        abs_url="https://arxiv.org/abs/2401.00001",
-        pdf_url="https://arxiv.org/pdf/2401.00001",
+        abs_url=f"https://arxiv.org/abs/{arxiv_id}",
+        pdf_url=f"https://arxiv.org/pdf/{arxiv_id}",
         matched_profile="physics_student",
         keyword_hits=[],
         raw_entry_json={},

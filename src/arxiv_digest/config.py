@@ -161,7 +161,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
                 "keywords": PHYSICS_STUDENT_KEYWORDS,
                 "excluded_categories": ML_EXCLUDED_CATEGORIES,
                 "excluded_keywords": ML_EXCLUDED_KEYWORDS,
-                "max_results_per_day": 100,
+                "max_results_per_day": 500,
                 "page_size": 50,
                 "request_interval_seconds": 3,
                 "lookback_hours": 168,

@@ -5,11 +5,41 @@
   <p class="muted">{{ profile_display_name }} / {{ profile_display_name_zh }}</p>
   <div class="stats">
     <span>Total: {{ total_papers }}</span>
+    {% if report_mode == "abstract_translation" %}
+    <span>Translated: {{ analyzed_papers }}</span>
+    {% else %}
     <span>Analyzed: {{ analyzed_papers }}</span>
+    {% endif %}
     <span>Window: {{ window_start }} - {{ window_end }}</span>
   </div>
 </section>
 
+{% if report_mode == "abstract_translation" %}
+<section>
+  <h2>摘要中文对应</h2>
+  {% for paper in papers %}
+    <article class="card">
+      <h3>{{ paper.title_en }}</h3>
+      <p><strong>{{ paper.title_zh }}</strong></p>
+      <div class="grid">
+        <div><strong>作者</strong><br>{{ paper.authors_text }}</div>
+        <div><strong>发布时间</strong><br>{{ paper.published }}</div>
+        <div><strong>arXiv 分类</strong><br>{{ paper.categories_text }}</div>
+        <div><strong>链接</strong><br>
+          <a href="{{ paper.abs_url }}">arXiv</a>
+          {% if paper.pdf_url %} / <a href="{{ paper.pdf_url }}">PDF</a>{% endif %}
+        </div>
+      </div>
+      <h4>English abstract</h4>
+      <p>{{ paper.abstract_en }}</p>
+      <h4>中文摘要</h4>
+      <p>{{ paper.abstract_zh }}</p>
+    </article>
+  {% else %}
+    <p class="muted">暂无已完成中文摘要对应的论文。</p>
+  {% endfor %}
+</section>
+{% else %}
 <section class="panel">
   <h2>今日主题分布</h2>
   <table>
@@ -64,4 +94,5 @@
     <p class="muted">暂无已完成分析的论文。</p>
   {% endfor %}
 </section>
+{% endif %}
 {% endblock %}

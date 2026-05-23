@@ -15,7 +15,7 @@ def test_load_config_defaults_without_files(tmp_path: Path, monkeypatch) -> None
     assert "physics_student" in config.profiles
     assert "spt_anomaly_generalized_symmetry" in config.profiles
     _, profile = config.get_profile(None)
-    assert profile.arxiv.max_results_per_day == 100
+    assert profile.arxiv.max_results_per_day == 500
     assert profile.arxiv.request_interval_seconds == 3
     assert profile.arxiv.categories == ["cond-mat.str-el"]
     assert profile.arxiv.keywords == []

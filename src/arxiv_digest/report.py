@@ -95,16 +95,25 @@ def build_report_data(
         resolved_profile_name,
     )
     paper_items = [_record_to_item(record, profile.arxiv.timezone) for record in records]
+    report_mode = (
+        "abstract_translation" if resolved_profile_name == "physics_student" else "analysis"
+    )
     topic_counter = Counter((item["topic"], item["topic_zh"]) for item in paper_items)
     topics = [
         {"topic": topic, "topic_zh": topic_zh, "count": count}
         for (topic, topic_zh), count in topic_counter.most_common()
     ]
-    recommended_all = [
-        item for item in paper_items if item["relevance_score"] >= config.output.min_relevance_score
-    ]
-    recommended_all.sort(key=lambda item: item["relevance_score"], reverse=True)
-    recommended = recommended_all[: config.output.top_n]
+    if report_mode == "abstract_translation":
+        recommended_all = sorted(paper_items, key=lambda item: item["published"], reverse=True)
+        recommended = recommended_all
+    else:
+        recommended_all = [
+            item
+            for item in paper_items
+            if item["relevance_score"] >= config.output.min_relevance_score
+        ]
+        recommended_all.sort(key=lambda item: item["relevance_score"], reverse=True)
+        recommended = recommended_all[: config.output.top_n]
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for item in recommended:
         grouped[item["topic"]].append(item)
@@ -114,6 +123,7 @@ def build_report_data(
         "timezone": profile.arxiv.timezone,
         "window_start": _format_datetime(window_start.astimezone(ZoneInfo(profile.arxiv.timezone))),
         "window_end": _format_datetime(window_end.astimezone(ZoneInfo(profile.arxiv.timezone))),
+        "report_mode": report_mode,
         "profile": resolved_profile_name,
         "profile_display_name": profile.display_name,
         "profile_display_name_zh": profile.display_name_zh,
@@ -233,9 +243,37 @@ MARKDOWN_TEMPLATE = """
 # arXiv Physics Digest - {{ date }}
 
 方向：{{ profile_display_name }} / {{ profile_display_name_zh }}
+{% if report_mode == "abstract_translation" %}
+今日共抓取 {{ total_papers }} 篇强关联电子方向论文，其中完成摘要中文对应 {{ analyzed_papers }} 篇。
+{% else %}
 今日共抓取 {{ total_papers }} 篇相关论文，其中完成分析 {{ analyzed_papers }} 篇。
+{% endif %}
 统计窗口：{{ window_start }} 至 {{ window_end }}。
 
+{% if report_mode == "abstract_translation" %}
+## 摘要中文对应
+
+{% for paper in papers %}
+### {{ loop.index }}. {{ paper.title_en }}
+
+**中文标题**：{{ paper.title_zh }}
+**arXiv**：{{ paper.abs_url }}
+**PDF**：{{ paper.pdf_url or "N/A" }}
+**作者**：{{ paper.authors_text }}
+**发布时间**：{{ paper.published }}
+**arXiv 分类**：{{ paper.categories_text }}
+
+**英文摘要**
+
+{{ paper.abstract_en }}
+
+**中文摘要**
+
+{{ paper.abstract_zh }}
+{% else %}
+暂无已完成中文摘要对应的论文。
+{% endfor %}
+{% else %}
 ## 今日主题分布
 
 | 主题 | 中文主题 | 数量 |
@@ -300,6 +338,7 @@ MARKDOWN_TEMPLATE = """
 {% else %}
 暂无已完成分析的论文。
 {% endfor %}
+{% endif %}
 """
 
 HTML_TEMPLATE = """
@@ -376,12 +415,40 @@ HTML_TEMPLATE = """
     <div class="meta">
       <span>{{ profile_display_name }} / {{ profile_display_name_zh }}</span>
       <span>Total: {{ total_papers }}</span>
+      {% if report_mode == "abstract_translation" %}
+      <span>Translated: {{ analyzed_papers }}</span>
+      {% else %}
       <span>Analyzed: {{ analyzed_papers }}</span>
+      {% endif %}
       <span>Timezone: {{ timezone }}</span>
       <span>Window: {{ window_start }} - {{ window_end }}</span>
     </div>
   </header>
   <main>
+    {% if report_mode == "abstract_translation" %}
+    <h2>摘要中文对应</h2>
+    {% for paper in papers %}
+      <article class="card">
+        <h3>{{ paper.title_en }}</h3>
+        <p><strong>{{ paper.title_zh }}</strong></p>
+        <div class="grid">
+          <div><strong>Authors</strong><br>{{ paper.authors_text }}</div>
+          <div><strong>Published</strong><br>{{ paper.published }}</div>
+          <div><strong>Categories</strong><br>{{ paper.categories_text }}</div>
+          <div><strong>Links</strong><br>
+            <a href="{{ paper.abs_url }}">abs</a>
+            {% if paper.pdf_url %} / <a href="{{ paper.pdf_url }}">PDF</a>{% endif %}
+          </div>
+        </div>
+        <p class="section-label">English abstract</p>
+        <p>{{ paper.abstract_en }}</p>
+        <p class="section-label">中文摘要</p>
+        <p>{{ paper.abstract_zh }}</p>
+      </article>
+    {% else %}
+      <p>暂无已完成中文摘要对应的论文。</p>
+    {% endfor %}
+    {% else %}
     <h2>今日主题分布</h2>
     <table class="topics">
       <thead><tr><th>主题</th><th>中文主题</th><th>数量</th></tr></thead>
@@ -434,6 +501,7 @@ HTML_TEMPLATE = """
     {% else %}
       <p>暂无已完成分析的论文。</p>
     {% endfor %}
+    {% endif %}
   </main>
 </body>
 </html>

@@ -27,14 +27,21 @@ def build_analysis_messages(
     profile_name: str,
     profile: ProfileConfig,
 ) -> list[dict[str, str]]:
+    if profile_name == "physics_student":
+        system_content = (
+            "You translate arXiv physics metadata for a Chinese reader. Use only the "
+            "supplied title, abstract, authors, and arXiv categories. Return strict JSON only."
+        )
+    else:
+        system_content = (
+            "You are a careful physics research assistant helping a physics student "
+            "read arXiv papers. Analyze only from the supplied title, abstract, "
+            "authors, and arXiv categories. Return strict JSON only."
+        )
     return [
         {
             "role": "system",
-            "content": (
-                "You are a careful physics research assistant helping a physics student "
-                "read arXiv papers. Analyze only from the supplied title, abstract, "
-                "authors, and arXiv categories. Return strict JSON only."
-            ),
+            "content": system_content,
         },
         {
             "role": "user",
@@ -48,6 +55,9 @@ def build_analysis_messages(
 
 
 def build_analysis_prompt(paper: Paper, *, profile_name: str, profile: ProfileConfig) -> str:
+    if profile_name == "physics_student":
+        return _build_abstract_translation_prompt(paper, profile_name=profile_name, profile=profile)
+
     schema = json.dumps(PaperAnalysis.model_json_schema(), ensure_ascii=False)
     topics = "\n".join(f"- {item.topic}: {item.topic_zh}" for item in profile.topics)
     special_focus = ""
@@ -105,5 +115,58 @@ Authors: {", ".join(paper.authors)}
 Primary category: {paper.primary_category or ""}
 Categories: {", ".join(paper.categories)}
 Keyword hits: {", ".join(paper.keyword_hits)}
+Abstract: {paper.abstract}
+""".strip()
+
+
+def _build_abstract_translation_prompt(
+    paper: Paper,
+    *,
+    profile_name: str,
+    profile: ProfileConfig,
+) -> str:
+    schema = json.dumps(PaperAnalysis.model_json_schema(), ensure_ascii=False)
+    fallback_topic = profile.fallback_topic
+    primary_topic = profile.topics[0] if profile.topics else fallback_topic
+    return f"""
+你正在为 arXiv 强关联电子方向日报整理论文条目。
+这个 profile 只需要“英文标题/摘要”和“中文标题/摘要”的对应。
+不要做研究问题、物理机制、方法、结果、局限性或阅读优先级分析。
+
+输出必须是严格 JSON，不要 Markdown。
+
+请完成：
+1. 将论文标题翻译成自然、准确的中文，写入 title_zh。
+2. 将英文摘要完整翻译成中文，写入 abstract_zh。
+3. 其他必填字段只用于兼容 JSON schema，不要展开分析：
+   - topic 使用 "{primary_topic.topic}"。
+   - topic_zh 使用 "{primary_topic.topic_zh}"。
+   - method_type 使用 "unknown"。
+   - suggested_reading_priority 使用 "low"。
+   - relevance_score 使用 0。
+   - 研究问题、物理体系、方法、主要结果、实验或计算、局限性、相关性等字段统一写：
+     - 英文："Translation-only profile; not analyzed."
+     - 中文："本方向仅做标题和摘要中文对应，不进行深度分析。"
+   - key_concepts_en 使用 ["abstract translation"]。
+   - key_concepts_zh 使用 ["摘要中文对应"]。
+   - keywords_en 使用 ["cond-mat.str-el"]。
+   - keywords_zh 使用 ["强关联电子"]。
+   - recommended_reason_zh 使用 "本方向仅做摘要中文对应。"
+
+Required JSON schema:
+{schema}
+
+Profile:
+- name: {profile_name}
+- display_name: {profile.display_name}
+- display_name_zh: {profile.display_name_zh}
+- description: {profile.description}
+- fallback_topic: {fallback_topic.topic} / {fallback_topic.topic_zh}
+
+Paper:
+Title: {paper.title}
+Authors: {", ".join(paper.authors)}
+Primary category: {paper.primary_category or ""}
+Categories: {", ".join(paper.categories)}
 Abstract: {paper.abstract}
 """.strip()

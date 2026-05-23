@@ -268,6 +268,7 @@ profiles:
         - cond-mat.str-el
       keywords: []
       lookback_hours: 168
+      max_results_per_day: 500
       excluded_categories:
         - cs.AI
         - cs.LG
@@ -298,7 +299,7 @@ profiles:
         - cobordism
 ```
 
-`categories` 和 `keywords` 是正向检索条件；`excluded_categories` 和 `excluded_keywords` 用于排除机器学习中心论文。`physics_student` 的 `keywords: []` 表示抓取 `cond-mat.str-el` 分类下所有新文章。代码会优先在 arXiv query 中使用 `ANDNOT`，如果复杂 query 失败，会回退到正向检索后本地 post-filter。
+`categories` 和 `keywords` 是正向检索条件；`excluded_categories` 和 `excluded_keywords` 用于排除机器学习中心论文。`physics_student` 的 `keywords: []` 表示抓取 `cond-mat.str-el` 分类下所有新文章，`max_results_per_day: 500` 用于避免 7 天窗口内被 100 篇截断。代码会优先在 arXiv query 中使用 `ANDNOT`，如果复杂 query 失败，会回退到正向检索后本地 post-filter。
 
 ## 彻底排除机器学习论文
 
