@@ -18,3 +18,11 @@ def test_normalize_math_text_preserves_existing_math_delimiters() -> None:
     normalized = normalize_math_text(text)
 
     assert normalized == text
+
+
+def test_normalize_math_text_wraps_spaced_formula_before_chinese_text() -> None:
+    text = "该方法从Z_n[A]=Tr_A ρ_A^n的费米子分级交换表示出发。"
+
+    normalized = normalize_math_text(text)
+
+    assert r"从$Z_n[A]=\mathrm{Tr}_A \rho_A^n$的" in normalized

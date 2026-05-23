@@ -3,20 +3,38 @@ from __future__ import annotations
 import re
 
 _EXISTING_MATH_RE = re.compile(r"(?s)(\$\$.*?\$\$|\$[^$\n]+\$|\\\(.*?\\\)|\\\[.*?\\\])")
-_COMPACT_EQUATION_RE = re.compile(
-    r"""
-    (?<![$\\\w])
-    (?P<formula>
-      (?:\\[A-Za-z]+|[A-Za-zΑ-ω])
-      [A-Za-z0-9Α-ω\\{}\[\]\(\)]*
-      [_^]
-      [A-Za-z0-9Α-ω\\{}\[\]\(\)]*
-      \s*=\s*
-      [A-Za-z0-9Α-ω\\{}\[\]\(\)_^+\-*/]+
+_MATH_INDEX = r"[A-Za-z0-9Α-ω\\{}\[\]\(\)]+"
+_MATH_LHS = r"""
+    (?:\\[A-Za-z]+|[A-Za-zΑ-ω])
+    [A-Za-z0-9Α-ω\\{}\[\]\(\)]*
+    [_^]
+    [A-Za-z0-9Α-ω\\{}\[\]\(\)]*
+"""
+_MATH_TERM = rf"""
+    (?:
+      \\[A-Za-z]+
+      |[A-Za-z]{{1,3}}(?:[_^]{_MATH_INDEX})+
+      |[Α-ω]+(?:[_^]{_MATH_INDEX})*
+      |(?<![A-Za-z])[A-Za-z]{{1,2}}(?![A-Za-z])
+      |[0-9]+
+      |[{{}}\[\]\(\)_^+\-*/]+
     )
-    (?![$\w])
+"""
+_COMPACT_EQUATION_RE = re.compile(
+    rf"""
+    (?<![$\\A-Za-z0-9_])
+    (?P<formula>
+      {_MATH_LHS}
+      \s*=\s*
+      {_MATH_TERM}(?:\s*{_MATH_TERM})*
+    )
+    (?![$A-Za-z0-9_])
     """,
     re.VERBOSE,
+)
+_TRAILING_CONNECTOR_RE = re.compile(
+    r"\s+(?:a|an|and|are|as|by|for|from|in|is|of|on|or|the|to|where|with)$",
+    re.IGNORECASE,
 )
 _GREEK_REPLACEMENTS = {
     "α": r"\alpha",
@@ -73,7 +91,7 @@ def normalize_math_texts(values: list[str]) -> list[str]:
 
 
 def _wrap_formula(match: re.Match[str]) -> str:
-    formula = _normalize_formula(match.group("formula").strip())
+    formula = _normalize_formula(_trim_trailing_connectors(match.group("formula").strip()))
     return f"${formula}$"
 
 
@@ -83,3 +101,12 @@ def _normalize_formula(formula: str) -> str:
         normalized = normalized.replace(source, replacement)
     normalized = re.sub(r"(?<!\\)\bTr(?=_|\b)", r"\\mathrm{Tr}", normalized)
     return normalized
+
+
+def _trim_trailing_connectors(formula: str) -> str:
+    normalized = formula
+    while True:
+        trimmed = _TRAILING_CONNECTOR_RE.sub("", normalized)
+        if trimmed == normalized:
+            return normalized
+        normalized = trimmed
