@@ -159,6 +159,12 @@ td:last-child, th:last-child { text-align: right; }
   gap: 10px 16px;
 }
 
+mjx-container {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 @media (max-width: 760px) {
   .site-header { align-items: flex-start; flex-direction: column; }
   .hero-panel { grid-template-columns: 1fr; }

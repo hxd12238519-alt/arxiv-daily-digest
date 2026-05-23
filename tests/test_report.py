@@ -63,6 +63,8 @@ def test_generate_markdown_html_and_json_reports(tmp_path: Path) -> None:
     assert "摘要中文对应" in html
     assert "English abstract" in html
     assert "中文摘要" in html
+    assert "tex-mml-chtml.js" in html
+    assert "$n$" in html
     assert "研究问题" not in html
     assert payload["report_mode"] == "abstract_translation"
     assert payload["window_label"] == "近 36 小时"
@@ -112,7 +114,9 @@ def _paper(
         arxiv_id=arxiv_id,
         title=title,
         authors=["Alice"],
-        abstract="We study superconductivity and pairing in a correlated Hubbard system.",
+        abstract=(
+            "We study superconductivity and pairing in a correlated Hubbard system at filling $n$."
+        ),
         published=published,
         updated=published,
         primary_category="cond-mat.str-el",

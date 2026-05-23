@@ -144,6 +144,7 @@ def test_web_report_page_contains_physics_sections(tmp_path: Path, monkeypatch) 
     assert "摘要中文对应" in html
     assert "English abstract" in html
     assert "中文摘要" in html
+    assert "tex-mml-chtml.js" in html
     assert "研究问题" not in html
 
 
