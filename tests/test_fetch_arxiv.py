@@ -67,13 +67,15 @@ def test_build_search_query_includes_categories_keywords_and_utc_window() -> Non
     assert "submittedDate:[202401011230 TO 202401021230]" in query
 
 
-def test_qah_profile_query_contains_topology_terms() -> None:
+def test_spt_profile_query_contains_anomaly_and_symmetry_terms() -> None:
     config = load_config()
-    query = build_search_query(config, profile_name="condensed_matter_topology_qah")
+    query = build_search_query(config, profile_name="spt_anomaly_generalized_symmetry")
 
-    assert "cat:cond-mat.mes-hall" in query
-    assert 'all:"quantum anomalous Hall"' in query
-    assert 'all:"Chern insulator"' in query
+    assert "cat:hep-th" in query
+    assert 'all:"symmetry-protected topological"' in query
+    assert 'all:"quantum anomaly"' in query
+    assert 'all:"generalized global symmetry"' in query
+    assert "quantum anomalous Hall" not in query
     assert "ANDNOT" in query
 
 
@@ -102,4 +104,4 @@ def test_sample_arxiv_papers_uses_local_feed() -> None:
 
     assert len(papers) == 2
     assert papers[0].arxiv_id == "2605.23001"
-    assert "Quantum Anomalous Hall" in papers[0].title
+    assert "Symmetry-Protected Topological" in papers[0].title

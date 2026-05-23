@@ -26,17 +26,17 @@ SAMPLE_ATOM_FEED = """<?xml version="1.0" encoding="UTF-8"?>
     <id>http://arxiv.org/abs/2605.23001v1</id>
     <updated>2026-05-22T23:30:00Z</updated>
     <published>2026-05-22T23:30:00Z</published>
-    <title>Quantum Anomalous Hall Effect in Magnetic Chern Insulators</title>
+    <title>Boundary Anomalies of Symmetry-Protected Topological Phases</title>
     <summary>
-      We study the quantum anomalous Hall effect in a magnetic topological
-      material described by a Chern insulator model. Berry curvature and chiral
-      edge states are analyzed through quantum transport calculations.
+      We study boundary anomalies of symmetry-protected topological phases
+      using generalized global symmetries, higher-form symmetry constraints,
+      and anomaly inflow in lattice models.
     </summary>
     <author><name>Alice Smith</name></author>
     <author><name>Bob Chen</name></author>
-    <arxiv:primary_category term="cond-mat.mes-hall"
+    <arxiv:primary_category term="cond-mat.str-el"
                             scheme="http://arxiv.org/schemas/atom"/>
-    <category term="cond-mat.mes-hall" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cond-mat.str-el" scheme="http://arxiv.org/schemas/atom"/>
     <category term="quant-ph" scheme="http://arxiv.org/schemas/atom"/>
     <link href="https://arxiv.org/abs/2605.23001v1" rel="alternate" type="text/html"/>
     <link title="pdf" href="https://arxiv.org/pdf/2605.23001v1"

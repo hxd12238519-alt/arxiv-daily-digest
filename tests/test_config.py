@@ -9,11 +9,11 @@ def test_load_config_defaults_without_files(tmp_path: Path, monkeypatch) -> None
     monkeypatch.chdir(tmp_path)
     config = load_config()
 
-    assert config.llm.provider == "mock"
-    assert config.llm.model == "mock-v1"
+    assert config.llm.provider == "deepseek"
+    assert config.llm.model == "deepseek-chat"
     assert config.default_profile == "physics_student"
     assert "physics_student" in config.profiles
-    assert "condensed_matter_topology_qah" in config.profiles
+    assert "spt_anomaly_generalized_symmetry" in config.profiles
     _, profile = config.get_profile(None)
     assert profile.arxiv.max_results_per_day == 100
     assert profile.arxiv.request_interval_seconds == 3
@@ -31,7 +31,7 @@ def test_get_profile_reports_available_profiles() -> None:
         raise AssertionError("Expected missing profile to raise ValueError")
 
     assert "physics_student" in message
-    assert "condensed_matter_topology_qah" in message
+    assert "spt_anomaly_generalized_symmetry" in message
 
 
 def test_environment_overrides_sensitive_runtime_fields(tmp_path: Path, monkeypatch) -> None:

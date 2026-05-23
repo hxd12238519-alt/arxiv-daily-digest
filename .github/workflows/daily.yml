@@ -38,7 +38,7 @@ jobs:
 
       - name: Run daily digest
         env:
-          ARXIV_DIGEST_PROVIDER: ${{ vars.ARXIV_DIGEST_PROVIDER || 'mock' }}
+          ARXIV_DIGEST_PROVIDER: ${{ vars.ARXIV_DIGEST_PROVIDER || 'deepseek' }}
           ARXIV_DIGEST_DEFAULT_PROFILE: ${{ vars.ARXIV_DIGEST_DEFAULT_PROFILE || 'physics_student' }}
           ARXIV_DIGEST_EXTRA_PROFILES: ${{ vars.ARXIV_DIGEST_EXTRA_PROFILES || '' }}
           ARXIV_DIGEST_WEB_PUBLIC_BASE_URL: ${{ vars.ARXIV_DIGEST_WEB_PUBLIC_BASE_URL || '' }}

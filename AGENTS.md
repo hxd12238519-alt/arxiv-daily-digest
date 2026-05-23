@@ -2,7 +2,7 @@
 
 ## 项目目标
 
-`arxiv-daily-digest` 每天从 arXiv 官方 API 获取物理方向新论文，基于标题、摘要、作者和分类进行去重、物理主题分类、中文解释和双语速读报告生成。默认 profile 必须是 `physics_student`，默认 provider 必须是 `mock`，确保没有任何外部 LLM API key 时也能运行。
+`arxiv-daily-digest` 每天从 arXiv 官方 API 获取物理方向新论文，基于标题、摘要、作者和分类进行去重、物理主题分类、中文解释和双语速读报告生成。默认 profile 必须是 `physics_student`，重点 profile 是 `spt_anomaly_generalized_symmetry`。正常运行默认使用 `deepseek`，API key 只允许从环境变量读取；`mock` provider 仅用于测试和离线开发。
 
 ## 目录结构
 
@@ -56,7 +56,7 @@ ruff format .
 - 不要爬 arXiv HTML 页面，只能使用官方 API。
 - 不要绕过 arXiv rate limit；不得并发请求 arXiv API，连续请求至少间隔 3 秒。
 - 不要把默认 profile 改回 AI/ML/LLM 方向。
-- 不要把默认 provider 改成需要 API key 的真实 provider。
+- 不要把默认 provider 改回 `mock`；测试需要离线确定性输出时才显式使用 `mock` provider。
 - 不要默认下载 PDF；PDF 解析只能作为默认禁用的后续扩展。
 - Web 公开分享模式下，生成任务和 `force=true` 重新生成必须经过 `WEB_ADMIN_TOKEN` 保护。
 - GitHub Pages 静态站点只能发布报告，不允许包含 API key 或触发真实 API 的前端逻辑。

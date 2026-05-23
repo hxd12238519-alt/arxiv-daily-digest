@@ -1,8 +1,8 @@
 # arxiv-daily-digest
 
-面向物理系学生的本地 arXiv 物理文献日报工具。项目每天从 arXiv 官方 API 抓取物理方向新论文，默认排除以机器学习、人工智能、LLM、RAG、Agent 为中心的论文，根据物理主题分类，并生成中英文双语“物理文献速读”报告。
+面向物理系学生的本地 arXiv 物理文献日报工具。项目每天从 arXiv 官方 API 抓取物理方向新论文，默认排除以机器学习、人工智能、LLM、RAG、Agent 为中心的论文，根据物理主题分类，并用 DeepSeek 等真实 LLM 生成中英文双语“物理文献速读”报告。
 
-默认 profile 是 `physics_student`，重点方向 profile 是 `condensed_matter_topology_qah`。
+默认 profile 是 `physics_student`，重点方向 profile 是 `spt_anomaly_generalized_symmetry`。
 
 ## 功能
 
@@ -12,7 +12,8 @@
 - 按凝聚态、拓扑量子物态、量子霍尔、超导、强关联、冷原子、量子光学等主题分类。
 - 生成 Markdown、HTML、JSON 三种报告。
 - 提供 CLI 和本地 Web App 两种入口。
-- 默认 `MockProvider` 可离线运行，不需要任何 LLM API key。
+- 默认使用 `deepseek` provider；API key 只从环境变量读取。
+- `MockProvider` 仅用于测试和离线开发，不作为正常日报生成路径。
 - 真实 LLM API 只在后端调用，API key 只从环境变量读取。
 
 报告重点解释：
@@ -41,16 +42,11 @@ cp config.example.yaml config.yaml
 
 ## 本地 Web App
 
-Mock 模式，不消耗外部 API：
+真实 arXiv 抓取 + DeepSeek 分析：
 
 ```bash
-python -m arxiv_digest web --profile physics_student --provider mock
-```
-
-当前网络不能访问 arXiv 时，用内置 sample feed 跑通网页 demo：
-
-```bash
-python -m arxiv_digest web --profile physics_student --provider mock --sample
+export DEEPSEEK_API_KEY="..."
+python -m arxiv_digest web --profile physics_student --provider deepseek
 ```
 
 打开：
@@ -111,7 +107,7 @@ python -m arxiv_digest web --public --profile physics_student --provider deepsee
 只有在你明确愿意让任何访问者触发 API 消耗时，才使用：
 
 ```bash
-python -m arxiv_digest web --public --allow-public-auto-run --provider mock
+python -m arxiv_digest web --public --allow-public-auto-run --provider deepseek
 ```
 
 真实 provider 不建议开启 `--allow-public-auto-run`。
@@ -131,7 +127,7 @@ python -m arxiv_digest build-site --site-dir site
 ```text
 site/index.html
 site/latest/physics_student.html
-site/latest/condensed_matter_topology_qah.html
+site/latest/spt_anomaly_generalized_symmetry.html
 site/reports/YYYY-MM-DD-physics_student.html
 ```
 
@@ -147,10 +143,10 @@ https://<你的GitHub用户名>.github.io/arxiv-daily-digest/
 https://<你的GitHub用户名>.github.io/arxiv-daily-digest/latest/physics_student.html
 ```
 
-最新凝聚态 / 拓扑 / 量子反常霍尔日报：
+最新 SPT / 量子反常 / 广义对称性日报：
 
 ```text
-https://<你的GitHub用户名>.github.io/arxiv-daily-digest/latest/condensed_matter_topology_qah.html
+https://<你的GitHub用户名>.github.io/arxiv-daily-digest/latest/spt_anomaly_generalized_symmetry.html
 ```
 
 这个公开站点是静态 HTML：
@@ -200,16 +196,18 @@ Authorization: Bearer <WEB_ADMIN_TOKEN>
 物理通用方向：
 
 ```bash
-python -m arxiv_digest run-daily --profile physics_student --provider mock
+export DEEPSEEK_API_KEY="..."
+python -m arxiv_digest run-daily --profile physics_student --provider deepseek
 ```
 
-凝聚态 / 拓扑 / 量子反常霍尔方向：
+SPT / 量子反常 / 广义对称性方向：
 
 ```bash
-python -m arxiv_digest run-daily --profile condensed_matter_topology_qah --provider mock
+export DEEPSEEK_API_KEY="..."
+python -m arxiv_digest run-daily --profile spt_anomaly_generalized_symmetry --provider deepseek
 ```
 
-离线 demo：
+离线测试或开发时可以显式使用 mock provider：
 
 ```bash
 python -m arxiv_digest run-daily --profile physics_student --provider mock --sample
@@ -221,8 +219,8 @@ python -m arxiv_digest run-daily --profile physics_student --provider mock --sam
 python -m arxiv_digest doctor
 python -m arxiv_digest init-db
 python -m arxiv_digest fetch --profile physics_student
-python -m arxiv_digest fetch --profile physics_student --sample
-python -m arxiv_digest analyze --profile physics_student --provider mock --limit 10
+python -m arxiv_digest fetch --profile spt_anomaly_generalized_symmetry
+python -m arxiv_digest analyze --profile physics_student --provider deepseek --limit 10
 python -m arxiv_digest report --profile physics_student --format all
 ```
 
@@ -232,7 +230,7 @@ python -m arxiv_digest report --profile physics_student --format all
 reports/YYYY-MM-DD-physics_student.md
 reports/YYYY-MM-DD-physics_student.html
 reports/YYYY-MM-DD-physics_student.json
-reports/YYYY-MM-DD-condensed_matter_topology_qah.md
+reports/YYYY-MM-DD-spt_anomaly_generalized_symmetry.md
 ```
 
 ## Live Smoke Test
@@ -282,6 +280,25 @@ profiles:
         - deep learning
         - large language model
         - LLM
+
+  spt_anomaly_generalized_symmetry:
+    arxiv:
+      categories:
+        - cond-mat.str-el
+        - cond-mat.stat-mech
+        - quant-ph
+        - hep-th
+        - math-ph
+      keywords:
+        - symmetry-protected topological
+        - SPT phase
+        - quantum anomaly
+        - anomaly matching
+        - generalized global symmetry
+        - higher-form symmetry
+        - non-invertible symmetry
+        - anomaly inflow
+        - cobordism
 ```
 
 `categories` 和 `keywords` 是正向检索条件；`excluded_categories` 和 `excluded_keywords` 用于排除机器学习中心论文。代码会优先在 arXiv query 中使用 `ANDNOT`，如果复杂 query 失败，会回退到正向检索后本地 post-filter。
@@ -358,8 +375,8 @@ profiles:
 
 ```yaml
 llm:
-  provider: mock
-  model: mock-v1
+  provider: deepseek
+  model: deepseek-chat
 ```
 
 Custom HTTP OpenAI-compatible：
@@ -422,7 +439,7 @@ GEMINI_API_KEY=...
 ANTHROPIC_API_KEY=...
 LITELLM_API_KEY=...
 ARXIV_DIGEST_DEFAULT_PROFILE=physics_student
-ARXIV_DIGEST_PROVIDER=mock
+ARXIV_DIGEST_PROVIDER=deepseek
 WEB_ADMIN_TOKEN=...
 ALLOW_LIVE_API_TEST=1
 ARXIV_DIGEST_WEB_PUBLIC_BASE_URL=https://your-domain.example
@@ -430,7 +447,7 @@ ARXIV_DIGEST_WEB_PUBLIC_BASE_URL=https://your-domain.example
 
 ## GitHub Actions
 
-工作流在 `.github/workflows/daily.yml`，每天日本时间 09:00 运行。未设置真实 LLM secrets 时，默认 `mock` provider 仍可跑通。
+工作流在 `.github/workflows/daily.yml`，每天日本时间 09:00 运行。默认使用 `deepseek`，需要在 GitHub Secrets 设置 `DEEPSEEK_API_KEY`。
 
 工作流会：
 
@@ -471,7 +488,7 @@ Run Web:
 
 ```bash
 source .venv/bin/activate
-python -m arxiv_digest web --profile physics_student --provider ${ARXIV_DIGEST_PROVIDER:-mock}
+python -m arxiv_digest web --profile physics_student --provider ${ARXIV_DIGEST_PROVIDER:-deepseek}
 ```
 
 Test:
@@ -488,7 +505,7 @@ Live Smoke Test:
 source .venv/bin/activate
 ALLOW_LIVE_API_TEST=1 python -m arxiv_digest live-smoke \
   --profile physics_student \
-  --provider ${ARXIV_DIGEST_PROVIDER:-mock} \
+  --provider ${ARXIV_DIGEST_PROVIDER:-deepseek} \
   --limit 2
 ```
 

@@ -24,22 +24,23 @@ PHYSICS_STUDENT_TOPICS = [
     {"topic": "Other Physics", "topic_zh": "其他物理方向"},
 ]
 
-QAH_TOPICS = [
-    {"topic": "Quantum Anomalous Hall / QAHE", "topic_zh": "量子反常霍尔 / QAHE"},
-    {"topic": "Chern Insulators", "topic_zh": "陈绝缘体"},
-    {"topic": "Topological Insulators", "topic_zh": "拓扑绝缘体"},
-    {"topic": "Topological Semimetals", "topic_zh": "拓扑半金属"},
-    {"topic": "Topological Superconductivity", "topic_zh": "拓扑超导"},
-    {"topic": "Magnetic Topological Materials", "topic_zh": "磁性拓扑材料"},
-    {"topic": "Moiré / Twistronics", "topic_zh": "莫尔材料 / 扭转电子学"},
+SPT_ANOMALY_TOPICS = [
     {
-        "topic": "Quantum Hall / Fractional Chern Phases",
-        "topic_zh": "量子霍尔 / 分数量子陈相",
+        "topic": "Symmetry-Protected Topological Phases / SPT",
+        "topic_zh": "对称性保护拓扑相 / SPT",
     },
-    {"topic": "Strongly Correlated Topological Phases", "topic_zh": "强关联拓扑相"},
-    {"topic": "Topological Quantum Matter Theory", "topic_zh": "拓扑量子物态理论"},
-    {"topic": "Materials Synthesis / Experiment", "topic_zh": "材料制备 / 实验"},
-    {"topic": "Other Condensed Matter", "topic_zh": "其他凝聚态方向"},
+    {"topic": "Quantum Anomalies / Anomaly Matching", "topic_zh": "量子反常 / 反常匹配"},
+    {"topic": "Generalized Global Symmetries", "topic_zh": "广义全局对称性"},
+    {"topic": "Higher-Form Symmetries", "topic_zh": "高形式对称性"},
+    {
+        "topic": "Non-Invertible / Categorical Symmetries",
+        "topic_zh": "非可逆 / 范畴对称性",
+    },
+    {"topic": "Symmetry-Enriched Topological Order", "topic_zh": "对称性富集拓扑序"},
+    {"topic": "Topological Field Theory / Cobordism", "topic_zh": "拓扑场论 / 配边理论"},
+    {"topic": "Boundary Anomaly / Anomaly Inflow", "topic_zh": "边界反常 / 反常流入"},
+    {"topic": "Lattice Models and Spin Systems", "topic_zh": "晶格模型与自旋体系"},
+    {"topic": "Other SPT / Symmetry Physics", "topic_zh": "其他 SPT / 对称性物理"},
 ]
 
 ML_EXCLUDED_CATEGORIES = ["cs.AI", "cs.LG", "cs.CL", "cs.CV", "stat.ML"]
@@ -88,49 +89,74 @@ PHYSICS_STUDENT_KEYWORDS = [
     "statistical mechanics",
 ]
 
-QAH_KEYWORDS = [
-    "quantum anomalous Hall",
-    "QAH",
-    "QAHE",
-    "anomalous Hall",
-    "quantum Hall",
-    "Chern insulator",
-    "Chern number",
-    "Chern band",
-    "fractional Chern insulator",
-    "fractional quantum Hall",
-    "topological insulator",
-    "magnetic topological insulator",
-    "axion insulator",
-    "topological superconductor",
-    "topological superconductivity",
-    "Majorana",
-    "Weyl semimetal",
-    "Dirac semimetal",
-    "topological semimetal",
-    "Berry curvature",
-    "Berry phase",
-    "spin orbit coupling",
-    "spin-orbit coupling",
-    "chiral edge state",
-    "edge state",
-    "surface state",
-    "topological phase",
-    "topological order",
-    "topological invariant",
-    "Haldane model",
-    "Kane-Mele",
-    "moire",
-    "moiré",
-    "twisted bilayer",
-    "magic angle",
-    "graphene",
-    "van der Waals",
-    "MnBi2Te4",
-    "magnetic doping",
-    "quantum transport",
-    "Hall conductance",
-    "anomalous Hall conductivity",
+SPT_ANOMALY_KEYWORDS = [
+    "symmetry protected topological",
+    "symmetry-protected topological",
+    "SPT phase",
+    "SPT phases",
+    "SPT order",
+    "bosonic SPT",
+    "fermionic SPT",
+    "short-range entangled",
+    "invertible topological phase",
+    "invertible phase",
+    "topological response",
+    "topological theta term",
+    "quantum anomaly",
+    "quantum anomalies",
+    "anomaly matching",
+    "anomalous symmetry",
+    "mixed anomaly",
+    "mixed anomalies",
+    "global anomaly",
+    "gauge anomaly",
+    "chiral anomaly",
+    "gravitational anomaly",
+    "anomaly inflow",
+    "t Hooft anomaly",
+    "generalized symmetry",
+    "generalized symmetries",
+    "generalized global symmetry",
+    "generalized global symmetries",
+    "higher-form symmetry",
+    "higher-form symmetries",
+    "higher form symmetry",
+    "higher form symmetries",
+    "higher-group symmetry",
+    "higher group symmetry",
+    "one-form symmetry",
+    "one-form symmetries",
+    "1-form symmetry",
+    "1-form symmetries",
+    "two-form symmetry",
+    "two-form symmetries",
+    "2-form symmetry",
+    "2-form symmetries",
+    "subsystem symmetry",
+    "subsystem symmetries",
+    "non-invertible symmetry",
+    "non-invertible symmetries",
+    "noninvertible symmetry",
+    "noninvertible symmetries",
+    "categorical symmetry",
+    "categorical symmetries",
+    "fusion category symmetry",
+    "symmetry defect",
+    "topological defect",
+    "duality defect",
+    "symmetry fractionalization",
+    "symmetry enriched topological",
+    "SET phase",
+    "Lieb-Schultz-Mattis anomaly",
+    "LSM anomaly",
+    "boundary anomaly",
+    "gapless boundary",
+    "anomalous boundary",
+    "group cohomology",
+    "cobordism",
+    "cobordism classification",
+    "topological quantum field theory",
+    "TQFT",
 ]
 
 PHYSICS_STUDENT_CATEGORIES = [
@@ -147,15 +173,15 @@ PHYSICS_STUDENT_CATEGORIES = [
     "math-ph",
 ]
 
-QAH_CATEGORIES = [
+SPT_ANOMALY_CATEGORIES = [
     "cond-mat.mes-hall",
+    "cond-mat.other",
     "cond-mat.mtrl-sci",
     "cond-mat.str-el",
     "cond-mat.supr-con",
     "cond-mat.stat-mech",
-    "cond-mat.quant-gas",
     "quant-ph",
-    "physics.app-ph",
+    "hep-th",
     "math-ph",
 ]
 
@@ -182,34 +208,31 @@ DEFAULT_CONFIG: dict[str, Any] = {
             },
             "topics": PHYSICS_STUDENT_TOPICS,
         },
-        "condensed_matter_topology_qah": {
-            "display_name": "Condensed Matter / Topology / Quantum Anomalous Hall",
-            "display_name_zh": "凝聚态 / 拓扑物态 / 量子反常霍尔",
+        "spt_anomaly_generalized_symmetry": {
+            "display_name": "SPT / Quantum Anomaly / Generalized Symmetry",
+            "display_name_zh": "SPT / 量子反常 / 广义对称性",
             "description": (
-                "Focused profile for condensed matter, topological phases, quantum "
-                "anomalous Hall effect, Chern insulators, and quantum materials."
+                "Focused profile for symmetry-protected topological phases, quantum "
+                "anomalies, generalized symmetries, higher-form symmetries, and "
+                "related topological field theory or lattice model work."
             ),
             "arxiv": {
-                "categories": QAH_CATEGORIES,
-                "keywords": QAH_KEYWORDS,
+                "categories": SPT_ANOMALY_CATEGORIES,
+                "keywords": SPT_ANOMALY_KEYWORDS,
                 "excluded_categories": ML_EXCLUDED_CATEGORIES,
-                "excluded_keywords": [
-                    keyword
-                    for keyword in ML_EXCLUDED_KEYWORDS
-                    if keyword != "retrieval augmented generation"
-                ],
+                "excluded_keywords": ML_EXCLUDED_KEYWORDS,
                 "max_results_per_day": 100,
                 "page_size": 50,
                 "request_interval_seconds": 3,
                 "lookback_hours": 24,
                 "timezone": "Asia/Tokyo",
             },
-            "topics": QAH_TOPICS,
+            "topics": SPT_ANOMALY_TOPICS,
         },
     },
     "llm": {
-        "provider": "mock",
-        "model": "mock-v1",
+        "provider": "deepseek",
+        "model": "deepseek-chat",
         "temperature": 0.2,
         "timeout_seconds": 60,
         "max_retries": 3,
@@ -237,7 +260,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         },
         "deepseek": {
             "api_key_env": "DEEPSEEK_API_KEY",
-            "model": "",
+            "model": "deepseek-chat",
             "base_url": "https://api.deepseek.com",
         },
         "qwen": {
@@ -312,8 +335,8 @@ class ProfileConfig(BaseModel):
 class LLMConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    provider: str = "mock"
-    model: str = "mock-v1"
+    provider: str = "deepseek"
+    model: str = "deepseek-chat"
     temperature: float = 0.2
     timeout_seconds: float = 60
     max_retries: int = 3

@@ -37,34 +37,55 @@ PHYSICS_RULES = [
     ),
 ]
 
-QAH_RULES = [
+SPT_ANOMALY_RULES = [
     (
-        "Quantum Anomalous Hall / QAHE",
-        "量子反常霍尔 / QAHE",
-        ["quantum anomalous hall", "qahe", "qah"],
-    ),
-    ("Chern Insulators", "陈绝缘体", ["chern insulator", "chern number", "chern band"]),
-    ("Topological Insulators", "拓扑绝缘体", ["topological insulator"]),
-    ("Topological Semimetals", "拓扑半金属", ["weyl semimetal", "dirac semimetal"]),
-    (
-        "Topological Superconductivity",
-        "拓扑超导",
-        ["topological superconduct", "majorana"],
+        "Symmetry-Protected Topological Phases / SPT",
+        "对称性保护拓扑相 / SPT",
+        ["symmetry-protected topological", "symmetry protected topological", "spt phase"],
     ),
     (
-        "Moiré / Twistronics",
-        "莫尔材料 / 扭转电子学",
-        ["moire", "moiré", "twisted bilayer", "magic angle"],
+        "Quantum Anomalies / Anomaly Matching",
+        "量子反常 / 反常匹配",
+        ["quantum anomaly", "quantum anomalies", "anomaly matching", "t hooft anomaly"],
     ),
     (
-        "Quantum Hall / Fractional Chern Phases",
-        "量子霍尔 / 分数量子陈相",
-        ["fractional quantum hall", "fractional chern"],
+        "Generalized Global Symmetries",
+        "广义全局对称性",
+        ["generalized symmetry", "generalized symmetries", "generalized global symmetry"],
     ),
     (
-        "Magnetic Topological Materials",
-        "磁性拓扑材料",
-        ["mnbi2te4", "magnetic topological"],
+        "Higher-Form Symmetries",
+        "高形式对称性",
+        [
+            "higher-form symmetry",
+            "higher-form symmetries",
+            "higher form symmetry",
+            "higher form symmetries",
+            "1-form symmetry",
+            "one-form symmetry",
+        ],
+    ),
+    (
+        "Non-Invertible / Categorical Symmetries",
+        "非可逆 / 范畴对称性",
+        [
+            "non-invertible symmetry",
+            "non-invertible symmetries",
+            "noninvertible symmetry",
+            "categorical symmetry",
+            "categorical symmetries",
+        ],
+    ),
+    (
+        "Symmetry-Enriched Topological Order",
+        "对称性富集拓扑序",
+        ["symmetry enriched topological", "symmetry fractionalization", "set phase"],
+    ),
+    ("Topological Field Theory / Cobordism", "拓扑场论 / 配边理论", ["cobordism", "tqft"]),
+    (
+        "Boundary Anomaly / Anomaly Inflow",
+        "边界反常 / 反常流入",
+        ["anomaly inflow", "boundary anomaly", "gapless boundary"],
     ),
 ]
 
@@ -115,7 +136,11 @@ class MockProvider(LLMProvider):
 
     def _topic_for(self, paper: Paper) -> tuple[str, str]:
         text = self._text(paper)
-        rules = QAH_RULES if self.profile_name == "condensed_matter_topology_qah" else PHYSICS_RULES
+        rules = (
+            SPT_ANOMALY_RULES
+            if self.profile_name == "spt_anomaly_generalized_symmetry"
+            else PHYSICS_RULES
+        )
         for topic, topic_zh, terms in rules:
             if any(term in text for term in terms):
                 return topic, topic_zh
@@ -136,7 +161,14 @@ class MockProvider(LLMProvider):
         text = self._text(paper)
         concepts: list[tuple[str, str]] = []
         concept_map = [
-            ("quantum anomalous Hall effect", "量子反常霍尔效应"),
+            ("symmetry-protected topological phase", "对称性保护拓扑相"),
+            ("quantum anomaly", "量子反常"),
+            ("anomaly matching", "反常匹配"),
+            ("generalized global symmetry", "广义全局对称性"),
+            ("higher-form symmetry", "高形式对称性"),
+            ("non-invertible symmetry", "非可逆对称性"),
+            ("anomaly inflow", "反常流入"),
+            ("cobordism", "配边理论"),
             ("Chern insulator", "陈绝缘体"),
             ("Berry curvature", "贝里曲率"),
             ("topological insulator", "拓扑绝缘体"),

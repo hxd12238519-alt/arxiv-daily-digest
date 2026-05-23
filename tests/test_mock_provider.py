@@ -21,17 +21,17 @@ def test_mock_provider_outputs_valid_schema() -> None:
     assert analysis.title_zh.startswith("Mock 中文标题")
 
 
-def test_mock_provider_classifies_qah_profile() -> None:
+def test_mock_provider_classifies_spt_profile() -> None:
     config = load_config()
     provider = MockProvider(
         config,
         "mock",
         "mock-v1",
-        profile_name="condensed_matter_topology_qah",
+        profile_name="spt_anomaly_generalized_symmetry",
     )
-    analysis = provider.analyze_paper(_qah_paper())
+    analysis = provider.analyze_paper(_spt_paper())
 
-    assert analysis.topic == "Quantum Anomalous Hall / QAHE"
+    assert analysis.topic == "Symmetry-Protected Topological Phases / SPT"
 
 
 def test_mock_provider_classifies_superconductivity() -> None:
@@ -60,12 +60,14 @@ def _paper() -> Paper:
     )
 
 
-def _qah_paper() -> Paper:
+def _spt_paper() -> Paper:
     paper = _paper()
-    paper.title = "Quantum Anomalous Hall Effect in a Chern Insulator"
-    paper.abstract = "We study QAH and QAHE physics with chiral edge states."
-    paper.keyword_hits = ["quantum anomalous Hall", "QAH", "QAHE"]
-    paper.matched_profile = "condensed_matter_topology_qah"
+    paper.title = "Boundary Anomalies of Symmetry-Protected Topological Phases"
+    paper.abstract = (
+        "We study an SPT phase with generalized symmetry constraints and anomaly inflow."
+    )
+    paper.keyword_hits = ["symmetry-protected topological", "generalized symmetry"]
+    paper.matched_profile = "spt_anomaly_generalized_symmetry"
     return paper
 
 
