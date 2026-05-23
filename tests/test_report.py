@@ -104,6 +104,40 @@ def test_generate_suffix_report(tmp_path: Path) -> None:
     assert payload["report_suffix"] == "7d"
 
 
+def test_report_wraps_raw_formula_fragments(tmp_path: Path) -> None:
+    config = load_config()
+    config.database.path = str(tmp_path / "digest.sqlite3")
+    config.output.report_dir = str(tmp_path / "reports")
+    config.output.min_relevance_score = 0
+
+    storage = Storage(config.database.path)
+    storage.init_db()
+    paper = _paper(
+        title="Renyi Entanglement of Interacting Fermions",
+    )
+    paper.abstract = (
+        "The method starts from Z_n[A]=Tr_Aρ_A^n and has replica momenta q_m=(2m+1)π/n."
+    )
+    paper_id, _ = storage.insert_paper(paper)
+    analysis = MockProvider(config, "mock", "mock-v1").analyze_paper(paper)
+    storage.save_analysis(paper_id, "physics_student", "mock", "mock-v1", analysis)
+
+    generated = generate_reports(
+        storage,
+        config,
+        report_date=date(2024, 1, 1),
+        formats=["all"],
+        profile_name="physics_student",
+    )
+    html = generated["html"].read_text(encoding="utf-8")
+    payload = json.loads(generated["json"].read_text(encoding="utf-8"))
+
+    assert r"$Z_n[A]=\mathrm{Tr}_A\rho_A^n$" in html
+    assert r"$q_m=(2m+1)\pi/n$" in html
+    assert r"$Z_n[A]=\mathrm{Tr}_A\rho_A^n$" in payload["papers"][0]["abstract_en"]
+    assert r"$q_m=(2m+1)\pi/n$" in payload["papers"][0]["abstract_zh"]
+
+
 def _paper(
     *,
     arxiv_id: str = "2401.00001",

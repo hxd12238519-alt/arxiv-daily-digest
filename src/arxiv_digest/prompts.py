@@ -30,13 +30,15 @@ def build_analysis_messages(
     if profile_name == "physics_student":
         system_content = (
             "You translate arXiv physics metadata for a Chinese reader. Use only the "
-            "supplied title, abstract, authors, and arXiv categories. Return strict JSON only."
+            "supplied title, abstract, authors, and arXiv categories. Preserve formulas "
+            "as LaTeX inline math. Return strict JSON only."
         )
     else:
         system_content = (
             "You are a careful physics research assistant helping a physics student "
             "read arXiv papers. Analyze only from the supplied title, abstract, "
-            "authors, and arXiv categories. Return strict JSON only."
+            "authors, and arXiv categories. Preserve formulas as LaTeX inline math. "
+            "Return strict JSON only."
         )
     return [
         {
@@ -97,6 +99,12 @@ def build_analysis_prompt(paper: Paper, *, profile_name: str, profile: ProfileCo
 - anomaly inflow 翻译为“反常流入”
 {special_focus}
 
+公式排版要求：
+- 摘要或分析中出现变量、下标、上标、矩阵、算符、动量、路径积分、群或对称性表达式时，
+  必须用 LaTeX inline math 包起来，例如 `$Z_n[A]=\\mathrm{{Tr}}_A\\rho_A^n$`。
+- 不要输出裸公式文本，例如 `Z_n[A]=Tr_Aρ_A^n` 或 `q_m=(2m+1)π/n`。
+- 中文翻译中保留变量名、上下标和数学结构，不要把公式逐字翻译成中文。
+
 Profile:
 - name: {profile_name}
 - display_name: {profile.display_name}
@@ -134,6 +142,13 @@ def _build_abstract_translation_prompt(
 不要做研究问题、物理机制、方法、结果、局限性或阅读优先级分析。
 
 输出必须是严格 JSON，不要 Markdown。
+
+公式排版要求：
+- 摘要中出现变量、下标、上标、矩阵、算符、动量、路径积分等数学表达式时，
+  在 abstract_zh 中必须用 LaTeX inline math 包起来，例如
+  `$Z_n[A]=\\mathrm{{Tr}}_A\\rho_A^n$`。
+- 不要输出裸公式文本，例如 `Z_n[A]=Tr_Aρ_A^n` 或 `q_m=(2m+1)π/n`。
+- 中文翻译中保留变量名、上下标和数学结构，不要把公式逐字翻译成中文。
 
 请完成：
 1. 将论文标题翻译成自然、准确的中文，写入 title_zh。

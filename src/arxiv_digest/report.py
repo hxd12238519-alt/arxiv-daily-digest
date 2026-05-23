@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 from jinja2 import Environment, select_autoescape
 
 from arxiv_digest.config import AppConfig
+from arxiv_digest.math_text import normalize_math_text, normalize_math_texts
 from arxiv_digest.storage import Storage
 from arxiv_digest.utils import ensure_dir, json_dumps, today_in_timezone
 
@@ -195,12 +196,12 @@ def _record_to_item(record: dict[str, Any], timezone_name: str) -> dict[str, Any
     updated_local = paper.updated.astimezone(local_tz)
     return {
         "arxiv_id": paper.arxiv_id,
-        "title_en": paper.title,
-        "title_zh": analysis.title_zh,
+        "title_en": normalize_math_text(paper.title),
+        "title_zh": normalize_math_text(analysis.title_zh),
         "authors": paper.authors,
         "authors_text": ", ".join(paper.authors),
-        "abstract_en": paper.abstract,
-        "abstract_zh": analysis.abstract_zh,
+        "abstract_en": normalize_math_text(paper.abstract),
+        "abstract_zh": normalize_math_text(analysis.abstract_zh),
         "published": _format_datetime(published_local),
         "updated": _format_datetime(updated_local),
         "primary_category": paper.primary_category,
@@ -212,28 +213,32 @@ def _record_to_item(record: dict[str, Any], timezone_name: str) -> dict[str, Any
         "pdf_url": paper.pdf_url,
         "topic": analysis.topic,
         "topic_zh": analysis.topic_zh,
-        "physics_problem_en": analysis.physics_problem_en,
-        "physics_problem_zh": analysis.physics_problem_zh,
-        "physical_system_en": analysis.physical_system_en,
-        "physical_system_zh": analysis.physical_system_zh,
-        "key_concepts_en": analysis.key_concepts_en,
-        "key_concepts_zh": analysis.key_concepts_zh,
+        "physics_problem_en": normalize_math_text(analysis.physics_problem_en),
+        "physics_problem_zh": normalize_math_text(analysis.physics_problem_zh),
+        "physical_system_en": normalize_math_text(analysis.physical_system_en),
+        "physical_system_zh": normalize_math_text(analysis.physical_system_zh),
+        "key_concepts_en": normalize_math_texts(analysis.key_concepts_en),
+        "key_concepts_zh": normalize_math_texts(analysis.key_concepts_zh),
         "method_type": analysis.method_type,
-        "method_en": analysis.method_en,
-        "method_zh": analysis.method_zh,
-        "main_results_en": analysis.main_results_en,
-        "main_results_zh": analysis.main_results_zh,
-        "experiments_or_calculations_en": analysis.experiments_or_calculations_en,
-        "experiments_or_calculations_zh": analysis.experiments_or_calculations_zh,
-        "limitations_en": analysis.limitations_en,
-        "limitations_zh": analysis.limitations_zh,
-        "why_relevant_en": analysis.why_relevant_en,
-        "why_relevant_zh": analysis.why_relevant_zh,
+        "method_en": normalize_math_text(analysis.method_en),
+        "method_zh": normalize_math_text(analysis.method_zh),
+        "main_results_en": normalize_math_text(analysis.main_results_en),
+        "main_results_zh": normalize_math_text(analysis.main_results_zh),
+        "experiments_or_calculations_en": normalize_math_text(
+            analysis.experiments_or_calculations_en
+        ),
+        "experiments_or_calculations_zh": normalize_math_text(
+            analysis.experiments_or_calculations_zh
+        ),
+        "limitations_en": normalize_math_text(analysis.limitations_en),
+        "limitations_zh": normalize_math_text(analysis.limitations_zh),
+        "why_relevant_en": normalize_math_text(analysis.why_relevant_en),
+        "why_relevant_zh": normalize_math_text(analysis.why_relevant_zh),
         "suggested_reading_priority": analysis.suggested_reading_priority,
         "keywords_en": analysis.keywords_en,
         "keywords_zh": analysis.keywords_zh,
         "relevance_score": analysis.relevance_score,
-        "recommended_reason_zh": analysis.recommended_reason_zh,
+        "recommended_reason_zh": normalize_math_text(analysis.recommended_reason_zh),
         "provider": record["provider"],
         "model": record["model"],
         "profile": record["profile"],
